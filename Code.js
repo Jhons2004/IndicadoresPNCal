@@ -24,6 +24,25 @@ const CONFIG = {
   }
 };
 
+/**
+ * IDs por entorno. En QA se exigen copias de todas las hojas.
+ * Producción conserva IDs actuales para no interrumpir integraciones publicadas.
+ * ScriptProperties QA: PNCAL_QA_MODE=true, PNCAL_SHEET_USUARIOS,
+ * PNCAL_SHEET_INDICADORES y PNCAL_SHEET_OGA.
+ */
+function pncalSpreadsheetId_(kind) {
+  kind=String(kind||'').toUpperCase();
+  var allowed=['USUARIOS','INDICADORES','OGA'];
+  if (allowed.indexOf(kind)<0) throw new Error('Tipo de hoja no reconocido: '+kind);
+  var props=PropertiesService.getScriptProperties();
+  var configured=String(props.getProperty('PNCAL_SHEET_'+kind)||'').trim();
+  var isQA=String(props.getProperty('PNCAL_QA_MODE')||'').toLowerCase()==='true';
+  if (isQA && !configured) {
+    throw new Error('QA sin configurar: cree PNCAL_SHEET_'+kind+' con el ID de una hoja de pruebas.');
+  }
+  return configured || CONFIG['SPREADSHEET_ID_'+kind];
+}
+
 const DEPARTMENT_CONFIG = {
   DSNC:     { page: 'administrativo', name: 'Dirección de Sistemas de Normalización y Certificación', color: '#5D5CDE' },
   OGA:      { page: 'administrativo', name: 'Oficina Guatemalteca de Acreditación', color: '#EF4444' },
@@ -190,7 +209,7 @@ function findUserByCredentials_(username, password) {
   username = String(username || '').trim().toLowerCase();
   password = String(password || '').trim();
 
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+  var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
   var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
   if (!sheet) throw new Error('No existe la hoja de usuarios: ' + CONFIG.SHEETS.USUARIOS);
 
@@ -557,7 +576,7 @@ function getAllUsers(session) {
   try {
     requireAdmin_(session);
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     if (!sheet) return { success: false, message: 'Hoja de usuarios no encontrada.' };
 
@@ -599,7 +618,7 @@ function createUser(params, session) {
 
     if (!username || !password) throw new Error('Usuario y contraseña son obligatorios.');
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     if (!sheet) throw new Error('Hoja de usuarios no encontrada.');
 
@@ -637,7 +656,7 @@ function updateUserAdmin(params, session) {
 
     if (!originalUsername || !username) throw new Error('Usuario requerido.');
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     if (!sheet) throw new Error('Hoja de usuarios no encontrada.');
 
@@ -670,7 +689,7 @@ function resetUserPasswordAdmin(params, session) {
     var username = String(params.username || '').trim().toLowerCase();
     if (!username) throw new Error('Usuario requerido.');
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     if (!sheet) throw new Error('Hoja de usuarios no encontrada.');
 
@@ -697,7 +716,7 @@ function sendUserCredentialsAdmin(params, session) {
     requireAdmin_(session);
 
     var username = String(params.username || '').trim().toLowerCase();
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     var rowIndex = findUserRow_(sheet, username);
     if (!rowIndex) throw new Error('Usuario no encontrado.');
@@ -813,7 +832,7 @@ function saveIndicatorData(params, session) {
 
     requireDepartmentAccess_(session, dept);
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_INDICADORES);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('INDICADORES'));
     var sheetName = CONFIG.SHEETS[dept] || dept;
     var sh = ss.getSheetByName(sheetName);
 
@@ -886,7 +905,7 @@ function deleteIndicatorRow(params, session) {
 
     requireDepartmentAccess_(session, dept);
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_INDICADORES);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('INDICADORES'));
     var sheetName = CONFIG.SHEETS[dept] || dept;
     var sh = ss.getSheetByName(sheetName);
     if (!sh) throw new Error('Hoja no encontrada: ' + sheetName);
@@ -921,7 +940,7 @@ function readIndicatorSheet_(department, limit, filters) {
 
     if (!department) throw new Error('Departamento requerido.');
 
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_INDICADORES);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('INDICADORES'));
     var sheetName = CONFIG.SHEETS[department] || department;
     var sh = ss.getSheetByName(sheetName);
 
@@ -1616,7 +1635,7 @@ function sendReminderEmail(params, session) {
 function getSystemLogs(session) {
   try {
     requireAdmin_(session);
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sh = getOrCreateLogSheet_(ss);
     var values = sh.getDataRange().getValues();
     var logs = [];
@@ -1642,7 +1661,7 @@ function getSystemLogs(session) {
 function logActivity(user, action, details) {
   try {
     user = user || {};
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sh = getOrCreateLogSheet_(ss);
     sh.appendRow([new Date(), user.username || user.name || '', user.department || '', action || '', details || '']);
   } catch (e) {
@@ -1661,7 +1680,7 @@ function getOrCreateLogSheet_(ss) {
 }
 
 function getOrCreateEmailsSheet_() {
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+  var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
   var sh = ss.getSheetByName(CONFIG.SHEETS.EMAILS_CONFIG);
   if (!sh) {
     sh = ss.insertSheet(CONFIG.SHEETS.EMAILS_CONFIG);
@@ -1752,7 +1771,7 @@ function normalizeAccessText_(value) {
 
 function updateLastAccessByUsername_(username) {
   try {
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_USUARIOS);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('USUARIOS'));
     var sh = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
     var rowIndex = findUserRow_(sh, username);
     if (rowIndex) sh.getRange(rowIndex, 6).setValue(new Date());
@@ -1874,7 +1893,7 @@ function probarLecturaCRETEC() {
 // ====================================
 function probarEstructuraCOGUANORSinGuardar() {
   try {
-    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID_INDICADORES);
+    var ss = SpreadsheetApp.openById(pncalSpreadsheetId_('INDICADORES'));
     var sh = ss.getSheetByName(CONFIG.SHEETS.COGUANOR);
     if (!sh) throw new Error('No existe la hoja COGUANOR.');
 

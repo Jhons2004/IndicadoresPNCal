@@ -115,7 +115,7 @@ function handleOGAAction(action, params, session) {
 // ======================================================
 
 function ogaGetSS_() {
-  return SpreadsheetApp.openById(OGA_SS_ID);
+  return SpreadsheetApp.openById(pncalSpreadsheetId_('OGA'));
 }
 
 function ogaSheetData_(sheetName) {

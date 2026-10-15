@@ -983,7 +983,7 @@ function autorizarDriveCename() {
 }
 
 function pncxCenameOpenSpreadsheet_() {
-  return SpreadsheetApp.openById(PNCX_CENAME_CFG.spreadsheetId);
+  return SpreadsheetApp.openById(pncalSpreadsheetId_('INDICADORES'));
 }
 
 // Solo crea header si la hoja no existe (respeta headers existentes con tildes)

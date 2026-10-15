@@ -1,5 +1,6 @@
 # Plan de pruebas de aceptación PNCal
 
+- [ ] Activar `PNCAL_QA_MODE=true` y configurar los tres Spreadsheet IDs QA antes de probar cualquier edición.
 - [ ] `TEST_CONNECTION` y `AUTH_CHECK` funcionan con usuarios activos de cada departamento.
 - [ ] Usuarios OGA/CRETEC no son expulsados indebidamente a login; usuarios no administradores no pueden usar acciones `GET_USERS`.
 - [ ] El panel global enumera cuatro unidades y no mezcla encabezados distintos.

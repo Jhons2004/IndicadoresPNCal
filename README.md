@@ -36,8 +36,19 @@ La raíz contiene directamente los archivos `*.js`, `*.html` y `appsscript.json`
 '@ | Set-Content -Encoding utf8 .clasp.json
 ```
 
-7. `clasp.cmd status` y `clasp.cmd push` **solo después de verificar que el ID es el QA**, no el de producción.
-8. En Apps Script: `Implementar` → `Nueva implementación` → `Aplicación web`, otorgar los accesos correctos según política institucional y autorizar servicios Gmail/Drive/Sheets.
+7. En **Configuración del proyecto → Propiedades de la secuencia de comandos** del proyecto QA, crear las propiedades indicadas a continuación, usando IDs de **copias QA** de las hojas de cálculo (no IDs productivos):
+
+   | Propiedad | Valor |
+   |---|---|
+   | `PNCAL_QA_MODE` | `true` |
+   | `PNCAL_SHEET_USUARIOS` | Script ID **de la hoja** de usuarios QA (Spreadsheet ID) |
+   | `PNCAL_SHEET_INDICADORES` | Spreadsheet ID de indicadores/CENAME/COGUANOR/CRETEC QA |
+   | `PNCAL_SHEET_OGA` | Spreadsheet ID de OGA QA |
+
+   La propiedad `PNCAL_QA_MODE=true` evita usar silenciosamente los IDs productivos si falta alguna de las tres propiedades. Configure y conserve por separado `CENAME_API_KEY` de prueba. **La configuración se aplica al Script ID, no a GitHub.**
+
+8. `clasp.cmd status` y `clasp.cmd push` **solo después de verificar que el ID es el QA**, no el de producción.
+9. En Apps Script: `Implementar` → `Nueva implementación` → `Aplicación web`, otorgar los accesos correctos según política institucional y autorizar servicios Gmail/Drive/Sheets.
 
 **Advertencia:** una copia de Apps Script no necesariamente copia archivos de Google Sheets ni propiedades de script, permisos, activadores o despliegues. Probar primero con datos QA en una copia autorizada de las hojas y configurar las propiedades necesarias (`CENAME_API_KEY` para endpoint externo, etc.). Nunca publicar claves en GitHub.
 
