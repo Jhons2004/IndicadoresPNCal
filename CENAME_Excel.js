@@ -217,6 +217,44 @@ function pncxCenameDiagnostico(sessionToken) {
   }
 }
 
+/** Año/mes operativo CENAME. No muta la base y conserva Año/Mes si falta fecha. */
+function pncxCenamePeriodFromRecord_(record) {
+  var fecha=pncxCenameFormatDate_(pncxCenameGet_(record,'Fecha Operacion'));
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    var yy=Number(fecha.slice(0,4)),mm=Number(fecha.slice(5,7));
+    if (yy>1900 && mm>=1 && mm<=12) return {anio:yy,mes:mm};
+  }
+  return {
+    anio:Number(pncxCenameGet_(record,'Año')||0),
+    mes:Number(pncxCenameGet_(record,'Mes')||0)
+  };
+}
+/** Sumariza los registros filtrados sin depender de resumen mensual desfasado. */
+function pncxCenameSummaryFromRecords_(records) {
+  var byKey={};
+  var sums={
+    calibraciones:'Calibraciones',verificaciones:'Verificaciones',certificados:'Certificados',
+    informes:'Informes',estaciones:'Estaciones',dispensadores:'Dispensadores',
+    productos:'Productos',unidades:'Unidades',poblacion:'Poblacion',
+    huella:'Huella Economica',inmovilizaciones:'Inmovilizaciones',clientesMes:'Clientes Mes'
+  };
+  records.forEach(function(record) {
+    var p=pncxCenamePeriodFromRecord_(record);
+    if(!p.anio || !p.mes)return;
+    var env=pncxCenameGetEnvironmentFromObject_(record);
+    var period=p.anio+'-'+('0'+p.mes).slice(-2);
+    var key=period+'|'+env;
+    if(!byKey[key]) {
+      byKey[key]={periodo:period,entorno:env,entornoLabel:pncxCenameEnvironmentLabel_(env),
+        categoria:pncxCenameEnvironmentLabel_(env),registros:0};
+      Object.keys(sums).forEach(function(k){byKey[key][k]=0;});
+    }
+    var row=byKey[key];row.registros++;
+    Object.keys(sums).forEach(function(k){row[k]+=Number(pncxCenameGet_(record,sums[k])||0);});
+  });
+  return Object.keys(byKey).sort().reverse().map(function(k){return byKey[k];});
+}
+
 // SIEMPRE retorna objeto valido — nunca null
 function pncxCenameEstado(sessionToken, filters) {
   var emptyStats = {
@@ -251,12 +289,8 @@ function pncxCenameEstado(sessionToken, filters) {
     var text = pncxCenameNormalizeText_(filters.text || '');
     var limit = Math.max(1, Math.min(Number(filters.limit || 5000), 10000));
 
-    function anioStr(r) {
-      return String(pncxCenameGet_(r, 'Año') || '').split('.')[0].trim();
-    }
-    function mesStr(r) {
-      return String(pncxCenameGet_(r, 'Mes') || '').split('.')[0].trim();
-    }
+    function anioStr(r) { return String(pncxCenamePeriodFromRecord_(r).anio || ''); }
+    function mesStr(r) { return String(pncxCenamePeriodFromRecord_(r).mes || ''); }
     function envId(r) {
       return pncxCenameGetEnvironmentFromObject_(r);
     }
@@ -351,8 +385,8 @@ function pncxCenameEstado(sessionToken, filters) {
         idCarga: String(pncxCenameGet_(r,'ID Carga') || ''),
         fechaCarga: pncxCenameSerializableDate_(pncxCenameGet_(r,'Fecha Carga'), true),
         fechaOperacion: pncxCenameSerializableDate_(pncxCenameGet_(r,'Fecha Operacion'), false),
-        anio: Number(pncxCenameGet_(r,'Año') || 0),
-        mes: Number(pncxCenameGet_(r,'Mes') || 0),
+        anio: pncxCenamePeriodFromRecord_(r).anio,
+        mes: pncxCenamePeriodFromRecord_(r).mes,
         entorno: env,
         entornoLabel: pncxCenameEnvironmentLabel_(env),
         categoria: String(pncxCenameGet_(r,'Categoria') || pncxCenameEnvironmentLabel_(env)),
@@ -411,28 +445,9 @@ function pncxCenameEstado(sessionToken, filters) {
       };
     });
 
-    var summaryUi = filteredSummary.map(function(r) {
-      var env = pncxCenameCanonicalEnvironment_(pncxCenameGet_(r,'Entorno') || pncxCenameGet_(r,'Categoria'));
-      return {
-        periodo: String(pncxCenameGet_(r,'Periodo') || ''),
-        entorno: env,
-        entornoLabel: pncxCenameEnvironmentLabel_(env),
-        categoria: String(pncxCenameGet_(r,'Categoria') || pncxCenameEnvironmentLabel_(env)),
-        registros: Number(pncxCenameGet_(r,'Registros') || 0),
-        calibraciones: Number(pncxCenameGet_(r,'Calibraciones') || 0),
-        verificaciones: Number(pncxCenameGet_(r,'Verificaciones') || 0),
-        certificados: Number(pncxCenameGet_(r,'Certificados') || 0),
-        informes: Number(pncxCenameGet_(r,'Informes') || 0),
-        estaciones: Number(pncxCenameGet_(r,'Estaciones') || 0),
-        dispensadores: Number(pncxCenameGet_(r,'Dispensadores') || 0),
-        productos: Number(pncxCenameGet_(r,'Productos') || 0),
-        unidades: Number(pncxCenameGet_(r,'Unidades') || 0),
-        poblacion: Number(pncxCenameGet_(r,'Poblacion') || 0),
-        huella: Number(pncxCenameGet_(r,'Huella Economica') || 0),
-        inmovilizaciones: Number(pncxCenameGet_(r,'Inmovilizaciones') || 0),
-        clientesMes: Number(pncxCenameGet_(r,'Clientes Mes') || 0)
-      };
-    });
+    // La agrupación en el dashboard se deriva de Fecha Operacion (fuente temporal)
+    // cuando existe, evitando errores históricos de Año/Mes sin alterar la hoja.
+    var summaryUi = pncxCenameSummaryFromRecords_(filteredRecords);
 
     function sum(field) {
       return filteredRecords.reduce(function(total, r) {
@@ -2564,7 +2579,7 @@ function pncxCenameNormalizeJsonRecord_(item,index) {
     poblacion:['poblacion','clientesMes','clientes'],
     huella:['huellaEconomicaMesQ','huellaEconomica','huella'],
     observaciones:['observaciones'],sector:['sector','tipo'],
-    subcategoria:['subcategoria','instrumento','producto','unidad'],
+    subcategoria:['subcategoria','instrumento','producto'],
     departamentoOperativo:['departamento','departamentoOperativo'],municipio:['municipio']
   };
   normalized._presentes = {};
