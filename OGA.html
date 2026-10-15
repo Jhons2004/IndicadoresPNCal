@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>OGA - Dashboard de Acreditación</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root {
+      --oga: #0284c7;
+      --oga2: #0369a1;
+      --bg: #f8fafc;
+      --green-soft: #10b981;
+      --slate: #334155;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--slate);
+    }
+
+    .tab-btn { transition: all .2s; }
+    .tab-btn.active {
+      background: var(--oga);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn .28s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(15,23,42,.045);
+      border: 1px solid #e2e8f0;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(15,23,42,.08);
+    }
+
+    .kpi {
+      text-align: center;
+      padding: 18px 12px;
+    }
+
+    .kpi .val {
+      font-size: 2rem;
+      font-weight: 900;
+      margin-top: 6px;
+      line-height: 1;
+    }
+
+    .kpi .lbl {
+      font-size: .72rem;
+      color: #64748b;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-green  { background:#d1fae5; color:#065f46; }
+    .badge-yellow { background:#fef3c7; color:#92400e; }
+    .badge-red    { background:#fee2e2; color:#991b1b; }
+    .badge-gray   { background:#f1f5f9; color:#475569; }
+    .badge-blue   { background:#dbeafe; color:#1e40af; }
+    .badge-orange { background:#ffedd5; color:#9a3412; }
+    .badge-purple { background:#ede9fe; color:#5b21b6; }
+
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    .chart-wrap-sm {
+      position: relative;
+      height: 230px;
+      width: 100%;
+    }
+
+    .stat-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width .6s ease;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+    }
+
+    thead {
+      background: #f0f9ff;
+      border-bottom: 2px solid #bae6fd;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      text-align: left;
+      font-size: .8rem;
+      vertical-align: top;
+      color: #334155;
+    }
+
+    th {
+      font-weight: 800;
+      color: #0369a1;
+    }
+
+    tbody tr:hover { background:#f8fafc; }
+
+    .mono {
+      font-family: Consolas, monospace;
+      font-size: .75rem;
+    }
+
+    .input-control {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .85rem;
+      background: #fff;
+      color: #334155;
+      outline: none;
+      min-height: 42px;
+    }
+
+    .input-control:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2,132,199,.12);
+    }
+
+    .filter-label {
+      font-size: .68rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .map-box {
+      width: 100%;
+      height: 390px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #bae6fd;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
+      z-index: 1;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(15,23,42,.15);
+      border-left: 4px solid var(--green-soft);
+      font-size: .85rem;
+      min-width: 280px;
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .toast.err { border-left-color:#ef4444; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+
+    .overlay.show { display:flex; }
+
+    .loading-card {
+      background:#fff;
+      border-radius:18px;
+      padding:30px;
+      text-align:center;
+      min-width:280px;
+      box-shadow:0 16px 40px rgba(15,23,42,.18);
+    }
+
+    @media(max-width:768px) {
+      .kpi .val { font-size:1.5rem; }
+      .map-box { height:320px; }
+      .chart-wrap { height:250px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header style="background:linear-gradient(135deg, var(--oga), var(--oga2))" class="text-white shadow-md sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
+        OGA
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight tracking-wide">Oficina Guatemalteca de Acreditación</h1>
+        <p class="text-sky-100 text-xs">Dashboard segmentado — Acreditados y Reconocidos</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="text-right hidden sm:block">
+        <p class="font-bold text-sm" id="oga-username">-</p>
+        <p class="text-sky-200 text-xs" id="oga-role">-</p>
+      </div>
+
+      <button type="button" onclick="refreshAll()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-sm">
+        <i class="fas fa-sync-alt" id="refresh-icon"></i> Actualizar
+      </button>
+
+      <button type="button" onclick="showLogout()" class="bg-white bg-opacity-10 hover:bg-opacity-20 border border-white border-opacity-30 text-white px-3 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+        <i class="fas fa-sign-out-alt"></i> Salir
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 pt-6 pb-4">
+  <div class="flex gap-2 flex-wrap">
+    <button type="button" class="tab-btn active px-4 py-2 rounded-full border border-sky-200 bg-white font-bold text-sm text-sky-700" data-tab="resumen">
+      <i class="fas fa-chart-pie mr-1"></i>Panel General
+    </button>
+
+    <button type="button" class="tab-btn px-4 py-2 rounded-full border border-sky-200 bg-white font-bold text-sm text-sky-700" data-tab="estado">
+      <i class="fas fa-chart-column mr-1"></i>OECs por Estado
+    </button>
+
+    <button type="button" class="tab-btn px-4 py-2 rounded-full border border-sky-200 bg-white font-bold text-sm text-sky-700" data-tab="sitios">
+      <i class="fas fa-map-location-dot mr-1"></i>Sitios y Ubicaciones
+    </button>
+
+    <button type="button" class="tab-btn px-4 py-2 rounded-full border border-sky-200 bg-white font-bold text-sm text-sky-700" data-tab="directorio">
+      <i class="fas fa-building mr-1"></i>Directorio de OECs
+    </button>
+  </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 pb-12">
+
+  <div class="tab-pane active" id="tab-resumen">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
+      <div class="card p-5 border-t-4 border-t-sky-500">
+        <div class="section-title mb-4 border-none">
+          <i class="fas fa-certificate text-sky-600"></i>Organismos Acreditados
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="kpi bg-sky-50 rounded-xl">
+            <div class="lbl">Total vig.</div>
+            <div class="val text-sky-700" id="kpi-acred-total">—</div>
+          </div>
+          <div class="kpi bg-emerald-50 rounded-xl">
+            <div class="lbl">Vigentes</div>
+            <div class="val text-emerald-600" id="kpi-acred-vig">—</div>
+          </div>
+          <div class="kpi bg-amber-50 rounded-xl">
+            <div class="lbl">Proceso</div>
+            <div class="val text-amber-500" id="kpi-acred-proc">—</div>
+          </div>
+          <div class="kpi bg-orange-50 rounded-xl">
+            <div class="lbl">Suspend.</div>
+            <div class="val text-orange-500" id="kpi-acred-susp">—</div>
+          </div>
+          <div class="kpi bg-rose-50 rounded-xl">
+            <div class="lbl">Cancel.</div>
+            <div class="val text-rose-500" id="kpi-acred-cancel">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 border-t-4 border-t-purple-500">
+        <div class="section-title mb-4 border-none">
+          <i class="fas fa-handshake text-purple-600"></i>Organismos Reconocidos
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="kpi bg-purple-50 rounded-xl">
+            <div class="lbl">Total vig.</div>
+            <div class="val text-purple-700" id="kpi-rec-total">—</div>
+          </div>
+          <div class="kpi bg-emerald-50 rounded-xl">
+            <div class="lbl">Vigentes</div>
+            <div class="val text-emerald-600" id="kpi-rec-vig">—</div>
+          </div>
+          <div class="kpi bg-amber-50 rounded-xl">
+            <div class="lbl">Proceso</div>
+            <div class="val text-amber-500" id="kpi-rec-proc">—</div>
+          </div>
+          <div class="kpi bg-orange-50 rounded-xl">
+            <div class="lbl">Suspend.</div>
+            <div class="val text-orange-500" id="kpi-rec-susp">—</div>
+          </div>
+          <div class="kpi bg-rose-50 rounded-xl">
+            <div class="lbl">Cancel.</div>
+            <div class="val text-rose-500" id="kpi-rec-cancel">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-scale-balanced text-sky-600"></i>Distribución General
+        </div>
+        <div class="chart-wrap-sm">
+          <canvas id="chart-segmentos"></canvas>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-circle-nodes text-emerald-600"></i>Estado de Acreditados
+        </div>
+        <div class="chart-wrap-sm">
+          <canvas id="chart-estado-acred"></canvas>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-circle-nodes text-purple-600"></i>Estado de Reconocidos
+        </div>
+        <div class="chart-wrap-sm">
+          <canvas id="chart-estado-rec"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-gavel text-sky-600"></i>Decisiones de Consejo
+        </div>
+        <div id="decisiones-list" class="space-y-4 mt-2">
+          <div class="text-center text-slate-400 py-6">
+            <i class="fas fa-spinner spinner text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-chart-line text-emerald-600"></i>Indicadores de Proyección
+        </div>
+        <div id="proyecciones-general" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-estado">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-chart-column text-sky-600"></i>Estados por Segmento
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-estado-segmento"></canvas>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-chart-pie text-purple-600"></i>Composición Acreditados vs Reconocidos
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-composicion"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-flask-vial text-sky-600"></i>Tipos de Organismos Acreditados
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-tipos-acred"></canvas>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-earth-americas text-purple-600"></i>Tipos de Organismos Reconocidos
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-tipos-rec"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <div class="section-title mb-4">
+        <i class="fas fa-chart-simple text-emerald-600"></i>Lectura Ejecutiva de Proyección
+      </div>
+      <div id="proyecciones-estado" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-sitios">
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+      <div class="card kpi">
+        <div class="lbl">Total Sitios</div>
+        <div class="val text-slate-700" id="sitios-total">—</div>
+      </div>
+      <div class="card kpi border-b-4 border-sky-400">
+        <div class="lbl">Sitios Acreditados</div>
+        <div class="val text-sky-600" id="sitios-acred">—</div>
+      </div>
+      <div class="card kpi border-b-4 border-purple-400">
+        <div class="lbl">Sitios Reconocidos</div>
+        <div class="val text-purple-600" id="sitios-rec">—</div>
+      </div>
+      <div class="card kpi border-b-4 border-emerald-400">
+        <div class="lbl">Países Detectados</div>
+        <div class="val text-emerald-600" id="sitios-paises">—</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card p-5 bg-gradient-to-br from-sky-50 to-white">
+        <div class="section-title mb-4">
+          <i class="fas fa-map text-sky-600"></i>Mapa de Organismos Acreditados
+        </div>
+        <div id="map-acreditados" class="map-box"></div>
+      </div>
+
+      <div class="card p-5 bg-gradient-to-br from-purple-50 to-white">
+        <div class="section-title mb-4">
+          <i class="fas fa-map text-purple-600"></i>Mapa de Organismos Reconocidos
+        </div>
+        <div id="map-reconocidos" class="map-box"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-location-dot text-sky-600"></i>País / Departamento - Acreditados
+        </div>
+        <div id="geo-list-acred" class="space-y-3"></div>
+      </div>
+
+      <div class="card p-5">
+        <div class="section-title mb-4">
+          <i class="fas fa-location-crosshairs text-purple-600"></i>País / Departamento - Reconocidos
+        </div>
+        <div id="geo-list-rec" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <div class="section-title mb-4">
+        <i class="fas fa-globe-americas text-emerald-600"></i>Distribución Geográfica Global
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-sitios-global"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-directorio">
+
+    <div class="card p-5 mb-5 bg-gradient-to-r from-slate-50 to-white">
+      <div class="section-title mb-4 border-none">
+        <i class="fas fa-search text-sky-600"></i>Directorio General de OECs
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label class="filter-label">Segmento</label>
+          <select id="dir-segmento" class="input-control w-full" onchange="cargarDirectorio()">
+            <option value="">Todos</option>
+            <option value="Acreditados">Acreditados</option>
+            <option value="Reconocidos">Reconocidos</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="filter-label">Estado</label>
+          <select id="dir-estado" class="input-control w-full" onchange="cargarDirectorio()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="filter-label">Tipo</label>
+          <select id="dir-tipo" class="input-control w-full" onchange="cargarDirectorio()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="filter-label">Norma</label>
+          <select id="dir-norma" class="input-control w-full" onchange="cargarDirectorio()">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="filter-label">Búsqueda</label>
+          <input id="dir-texto" type="text" placeholder="Razón social, ID, contacto..." class="input-control w-full" oninput="cargarDirectorio()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-white flex-wrap gap-2">
+        <span class="font-bold text-slate-700 text-lg flex items-center gap-2">
+          <i class="fas fa-building text-emerald-500"></i>Listado general
+        </span>
+        <span class="text-sm font-bold bg-sky-100 text-sky-700 px-3 py-1 rounded-full" id="dir-count">—</span>
+      </div>
+
+      <div class="table-wrap" id="directorio-tabla">
+        <div class="text-center text-slate-400 py-10">
+          <i class="fas fa-spinner spinner text-3xl"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="loading-overlay">
+  <div class="loading-card">
+    <i class="fas fa-circle-notch spinner text-5xl text-sky-500 mb-4"></i>
+    <p class="font-bold text-slate-700 text-lg" id="loading-msg">Cargando datos OGA...</p>
+    <p class="text-sm text-slate-400 mt-2">Por favor espera un momento</p>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<div class="overlay" id="logout-modal">
+  <div class="loading-card text-center" style="max-width:360px">
+    <div class="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-sky-100">
+      <i class="fas fa-sign-out-alt text-2xl text-sky-600"></i>
+    </div>
+
+    <h3 class="text-xl font-bold mb-2 text-slate-800">Cerrar Sesión</h3>
+    <p class="text-slate-500 mb-6 text-sm">¿Seguro que deseas salir del sistema de OGA?</p>
+
+    <div class="flex gap-3 justify-center">
+      <button type="button" onclick="closeLogout()" class="px-5 py-2.5 rounded-lg bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">
+        Cancelar
+      </button>
+
+      <button type="button" onclick="confirmLogout()" id="btn-logout" class="px-5 py-2.5 rounded-lg bg-sky-600 text-white font-bold hover:bg-sky-700 transition shadow-sm">
+        Salir del Sistema
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var OGA = {
+  appUrl:  '<?= typeof appUrl !== "undefined" ? appUrl : "" ?>',
+  token:   '<?= typeof token !== "undefined" ? token : "" ?>',
+  user:    <?= typeof user !== "undefined" ? JSON.stringify(user) : '{"name":"Usuario Local","role":"Administrador","department":"OGA"}' ?>,
+  data:    {}
+};
+
+var CHARTS = {};
+var MAPS = {};
+var MARKER_LAYERS = {};
+
+var COLORS = {
+  sky: '#0ea5e9',
+  skyDark: '#0369a1',
+  emerald: '#10b981',
+  amber: '#f59e0b',
+  rose: '#ef4444',
+  orange: '#f97316',
+  purple: '#8b5cf6',
+  slate: '#64748b',
+  green: '#22c55e'
+};
+
+function qs(id) {
+  return document.getElementById(id);
+}
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+function num(v) {
+  return Number(v || 0);
+}
+
+function fmt(v) {
+  return num(v).toLocaleString('es-GT');
+}
+
+function callAPI(action, extra, timeoutMs) {
+  extra = extra || {};
+  timeoutMs = timeoutMs || 45000;
+
+  return new Promise(function(resolve, reject) {
+    if (!OGA.appUrl) {
+      reject(new Error('URL del API no configurada'));
+      return;
+    }
+
+    var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
+    var done = false;
+
+    var timer = setTimeout(function() {
+      if (done) return;
+      done = true;
+      delete window[cb];
+      reject(new Error('Timeout en la solicitud: ' + action));
+    }, timeoutMs);
+
+    window[cb] = function(res) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      delete window[cb];
+
+      var old = document.getElementById(cb);
+      if (old) old.remove();
+
+      if (res) resolve(res);
+      else reject(new Error('Respuesta nula: ' + action));
+    };
+
+    var data = {
+      action: action,
+      callback: cb,
+      token: OGA.token
+    };
+
+    Object.keys(extra).forEach(function(k) {
+      data[k] = extra[k];
+    });
+
+    var params = new URLSearchParams(data);
+    var sc = document.createElement('script');
+    sc.id = cb;
+    sc.src = OGA.appUrl + '?' + params.toString();
+
+    sc.onerror = function() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      delete window[cb];
+      reject(new Error('Error de red comunicando con OGA.'));
+    };
+
+    document.head.appendChild(sc);
+  });
+}
+
+function setBusy(show, msg) {
+  msg = msg || 'Cargando...';
+  qs('loading-msg').textContent = msg;
+  qs('loading-overlay').classList.toggle('show', !!show);
+}
+
+function toast(msg, kind) {
+  kind = kind || 'ok';
+  var d = document.createElement('div');
+  d.className = 'toast' + (kind === 'err' ? ' err' : '');
+  d.textContent = msg;
+  qs('toast-wrap').appendChild(d);
+  setTimeout(function() { d.remove(); }, 4500);
+}
+
+function badgeSegmento(seg) {
+  if (seg === 'Reconocidos') {
+    return '<span class="badge badge-purple">Reconocido</span>';
+  }
+  return '<span class="badge badge-blue">Acreditado</span>';
+}
+
+function badgeEstado(e) {
+  var map = {
+    'Vigente': 'badge-green',
+    'En proceso': 'badge-yellow',
+    'Cancelado': 'badge-red',
+    'Suspendido': 'badge-orange',
+    'Activo': 'badge-green',
+    'Inactivo': 'badge-red',
+    'Abierto': 'badge-yellow',
+    'Cerrado': 'badge-green'
+  };
+
+  return '<span class="badge ' + (map[e] || 'badge-gray') + '">' + esc(e || 'Sin estado') + '</span>';
+}
+
+function makeChart(id, type, labels, datasets, opts) {
+  opts = opts || {};
+
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js no cargó.');
+    return;
+  }
+
+  if (CHARTS[id]) CHARTS[id].destroy();
+
+  var el = qs(id);
+  if (!el) return;
+
+  var baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          boxWidth: 12,
+          font: { family: 'Inter', size: 11 },
+          color: '#475569'
+        }
+      }
+    }
+  };
+
+  Object.keys(opts).forEach(function(k) {
+    baseOptions[k] = opts[k];
+  });
+
+  CHARTS[id] = new Chart(el.getContext('2d'), {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: baseOptions
+  });
+}
+
+function topEntries(obj, max) {
+  max = max || 8;
+  return Object.entries(obj || {})
+    .filter(function(pair) { return pair[0]; })
+    .sort(function(a,b) { return Number(b[1] || 0) - Number(a[1] || 0); })
+    .slice(0, max);
+}
+
+function renderBars(containerId, obj, colorClass) {
+  colorClass = colorClass || 'bg-sky-400';
+
+  var el = qs(containerId);
+  var rows = topEntries(obj, 10);
+  var max = rows.length ? rows[0][1] : 1;
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="text-center text-slate-400 py-6">Sin datos para mostrar</div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(function(pair) {
+    var k = pair[0];
+    var v = pair[1];
+    var pct = Math.round(Number(v || 0) / max * 100);
+
+    return ''
+      + '<div>'
+      + '  <div class="flex justify-between text-sm mb-1">'
+      + '    <span class="font-semibold text-slate-700">' + esc(k) + '</span>'
+      + '    <span class="font-black text-sky-800 bg-sky-50 px-2 rounded">' + fmt(v) + '</span>'
+      + '  </div>'
+      + '  <div class="stat-bar">'
+      + '    <div class="stat-bar-fill ' + colorClass + '" style="width:' + pct + '%"></div>'
+      + '  </div>'
+      + '</div>';
+  }).join('');
+}
+
+function bindTabs() {
+  var btns = document.querySelectorAll('.tab-btn');
+
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.classList.add('text-sky-700');
+      });
+
+      document.querySelectorAll('.tab-pane').forEach(function(p) {
+        p.classList.remove('active');
+      });
+
+      btn.classList.add('active');
+      btn.classList.remove('text-sky-700');
+
+      qs('tab-' + btn.dataset.tab).classList.add('active');
+
+      if (btn.dataset.tab === 'estado' && !OGA.data.compiladoRendered) renderEstadoModule();
+      if (btn.dataset.tab === 'sitios' && !OGA.data.sitios) loadSitios();
+      if (btn.dataset.tab === 'directorio' && !OGA.data.clientes) {
+        loadClientes().then(function() {
+          cargarDirectorio();
+        });
+      }
+
+      if (btn.dataset.tab === 'sitios') {
+        setTimeout(function() {
+          Object.keys(MAPS).forEach(function(k) {
+            if (MAPS[k]) MAPS[k].invalidateSize();
+          });
+        }, 350);
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  bindTabs();
+
+  qs('oga-username').textContent = OGA.user.name || 'Usuario OGA';
+  qs('oga-role').textContent = (OGA.user.role || '') + ' - ' + (OGA.user.department || 'OGA');
+
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', Arial, sans-serif";
+  }
+
+  if (OGA.appUrl) refreshAll();
+  else toast('Modo local: falta appUrl del backend.', 'err');
+});
+
+function refreshAll() {
+  var icon = qs('refresh-icon');
+  icon.classList.add('fa-spin');
+  OGA.data = {};
+
+  setBusy(true, 'Sincronizando información OGA...');
+
+  loadDashboard()
+    .then(function() {
+      return loadClientes();
+    })
+    .then(function() {
+      setBusy(false);
+    })
+    .catch(function(e) {
+      setBusy(false);
+      toast('Error cargando datos: ' + e.message, 'err');
+    })
+    .finally(function() {
+      icon.classList.remove('fa-spin');
+    });
+}
+
+function loadDashboard() {
+  return callAPI('OGA_GET_DASHBOARD').then(function(res) {
+    if (!res || !res.success) {
+      throw new Error(res ? res.message : 'Sin respuesta del servidor');
+    }
+
+    OGA.data.dashboard = res;
+    renderPanelGeneral(res);
+  });
+}
+
+function loadClientes() {
+  return callAPI('OGA_GET_CLIENTES', { limite: 2000 }).then(function(res) {
+    if (!res || !res.success) {
+      throw new Error(res ? res.message : 'No se pudieron cargar clientes');
+    }
+
+    OGA.data.clientes = res.clientes || [];
+    OGA.data.clientesStats = res.stats || {};
+    OGA.data.catalogos = res.catalogos || {};
+    fillDirectorioCatalogos();
+
+    return res;
+  });
+}
+
+function safeObj(obj, key) {
+  if (!obj) return {};
+  return obj[key] || {};
+}
+
+function safeNumObj(obj, key) {
+  if (!obj) return 0;
+  return Number(obj[key] || 0);
+}
+
+function renderPanelGeneral(d) {
+  var resumen = d.clientesResumen || {};
+  var stats = resumen.stats || {};
+  var byEstadoSeg = stats.byEstadoSegmento || {};
+  var bySeg = stats.bySegmento || {};
+  var kpiSeg = stats.kpisSegmentados || {};
+  var proy = stats.proyecciones || {};
+
+  var ea = byEstadoSeg['Acreditados'] || {};
+  var er = byEstadoSeg['Reconocidos'] || {};
+  var ka = kpiSeg['Acreditados'] || {};
+  var kr = kpiSeg['Reconocidos'] || {};
+
+  /*
+   * REGLA VISUAL:
+   * Total acreditado/reconocido = solo Vigentes.
+   * En proceso, suspendidos y cancelados son seguimiento.
+   */
+  qs('kpi-acred-total').textContent = fmt(ka.total || ea['Vigente'] || 0);
+  qs('kpi-acred-vig').textContent = fmt(ka.vigentes || ea['Vigente'] || 0);
+  qs('kpi-acred-proc').textContent = fmt(ka.enProceso || ea['En proceso'] || 0);
+  qs('kpi-acred-susp').textContent = fmt(ka.suspendidos || ea['Suspendido'] || 0);
+  qs('kpi-acred-cancel').textContent = fmt(ka.cancelados || ea['Cancelado'] || 0);
+
+  qs('kpi-rec-total').textContent = fmt(kr.total || er['Vigente'] || 0);
+  qs('kpi-rec-vig').textContent = fmt(kr.vigentes || er['Vigente'] || 0);
+  qs('kpi-rec-proc').textContent = fmt(kr.enProceso || er['En proceso'] || 0);
+  qs('kpi-rec-susp').textContent = fmt(kr.suspendidos || er['Suspendido'] || 0);
+  qs('kpi-rec-cancel').textContent = fmt(kr.cancelados || er['Cancelado'] || 0);
+
+  makeChart('chart-segmentos', 'doughnut',
+    ['Acreditados vigentes', 'Reconocidos vigentes'],
+    [{
+      data: [
+        ka.total || ea['Vigente'] || 0,
+        kr.total || er['Vigente'] || 0
+      ],
+      backgroundColor: [COLORS.sky, COLORS.purple],
+      borderWidth: 2,
+      hoverOffset: 5
+    }]
+  );
+
+  makeChart('chart-estado-acred', 'doughnut',
+    ['Vigente','En proceso','Suspendido','Cancelado'],
+    [{
+      data: [ea['Vigente'] || 0, ea['En proceso'] || 0, ea['Suspendido'] || 0, ea['Cancelado'] || 0],
+      backgroundColor: [COLORS.emerald, COLORS.amber, COLORS.orange, COLORS.rose],
+      borderWidth: 2
+    }]
+  );
+
+  makeChart('chart-estado-rec', 'doughnut',
+    ['Vigente','En proceso','Suspendido','Cancelado'],
+    [{
+      data: [er['Vigente'] || 0, er['En proceso'] || 0, er['Suspendido'] || 0, er['Cancelado'] || 0],
+      backgroundColor: [COLORS.emerald, COLORS.amber, COLORS.orange, COLORS.rose],
+      borderWidth: 2
+    }]
+  );
+
+  renderDecisiones(d.tablero || {});
+  renderProyecciones('proyecciones-general', proy);
+}
+
+function renderDecisiones(tablero) {
+  var dec = tablero.decisionesTipo || [];
+  var total = dec.reduce(function(a, x) {
+    return a + Number(x.cantidad || 0);
+  }, 0);
+
+  if (!dec.length) {
+    qs('decisiones-list').innerHTML = '<p class="text-slate-400 text-sm text-center py-4 bg-slate-50 rounded">Sin datos de decisiones para mostrar</p>';
+    return;
+  }
+
+  qs('decisiones-list').innerHTML = dec.map(function(x) {
+    var pct = total ? Math.round(Number(x.cantidad || 0) / total * 100) : 0;
+
+    return ''
+      + '<div>'
+      + '  <div class="flex justify-between text-sm mb-1">'
+      + '    <span class="font-semibold text-slate-700">' + esc(x.tipo) + '</span>'
+      + '    <span class="font-black text-sky-700 bg-sky-50 px-2 rounded">' + fmt(x.cantidad) + '</span>'
+      + '  </div>'
+      + '  <div class="stat-bar">'
+      + '    <div class="stat-bar-fill bg-sky-500" style="width:' + pct + '%"></div>'
+      + '  </div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderProyecciones(containerId, proy) {
+  proy = proy || {};
+
+  var rows = [
+    { seg: 'Acreditados', icon: 'fa-certificate', color: 'text-sky-600', bg: 'bg-sky-50' },
+    { seg: 'Reconocidos', icon: 'fa-handshake', color: 'text-purple-600', bg: 'bg-purple-50' }
+  ];
+
+  qs(containerId).innerHTML = rows.map(function(r) {
+    var p = proy[r.seg] || {};
+
+    return ''
+      + '<div class="' + r.bg + ' border border-white rounded-2xl p-4">'
+      + '  <div class="flex items-center gap-2 mb-3">'
+      + '    <i class="fas ' + r.icon + ' ' + r.color + '"></i>'
+      + '    <h3 class="font-black text-slate-700">' + r.seg + '</h3>'
+      + '  </div>'
+      + '  <div class="grid grid-cols-3 gap-2 text-center">'
+      + '    <div>'
+      + '      <div class="text-xl font-black ' + r.color + '">' + fmt(p.indiceVigencia || 0) + '%</div>'
+      + '      <div class="text-[10px] uppercase font-black text-slate-500">Vigencia</div>'
+      + '    </div>'
+      + '    <div>'
+      + '      <div class="text-xl font-black text-amber-500">' + fmt(p.potencialCrecimiento || 0) + '%</div>'
+      + '      <div class="text-[10px] uppercase font-black text-slate-500">Crecimiento</div>'
+      + '    </div>'
+      + '    <div>'
+      + '      <div class="text-xl font-black text-rose-500">' + fmt(p.indiceRiesgo || 0) + '%</div>'
+      + '      <div class="text-[10px] uppercase font-black text-slate-500">Riesgo</div>'
+      + '    </div>'
+      + '  </div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderEstadoModule() {
+  var stats = OGA.data.clientesStats || {};
+  var byEstadoSeg = stats.byEstadoSegmento || {};
+  var byTipoSeg = stats.byTipoSegmento || {};
+  var bySeg = stats.bySegmento || {};
+  var kpiSeg = stats.kpisSegmentados || {};
+  var proy = stats.proyecciones || {};
+
+  var ea = byEstadoSeg['Acreditados'] || {};
+  var er = byEstadoSeg['Reconocidos'] || {};
+  var ka = kpiSeg['Acreditados'] || {};
+  var kr = kpiSeg['Reconocidos'] || {};
+
+  makeChart('chart-estado-segmento', 'bar',
+    ['Vigente','En proceso','Suspendido','Cancelado'],
+    [
+      {
+        label: 'Acreditados',
+        data: [ea['Vigente'] || 0, ea['En proceso'] || 0, ea['Suspendido'] || 0, ea['Cancelado'] || 0],
+        backgroundColor: COLORS.sky,
+        borderRadius: 6
+      },
+      {
+        label: 'Reconocidos',
+        data: [er['Vigente'] || 0, er['En proceso'] || 0, er['Suspendido'] || 0, er['Cancelado'] || 0],
+        backgroundColor: COLORS.purple,
+        borderRadius: 6
+      }
+    ],
+    {
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+      }
+    }
+  );
+
+  makeChart('chart-composicion', 'polarArea',
+    ['Acreditados vigentes','Reconocidos vigentes'],
+    [{
+      data: [
+        ka.total || ea['Vigente'] || 0,
+        kr.total || er['Vigente'] || 0
+      ],
+      backgroundColor: ['rgba(14,165,233,.75)','rgba(139,92,246,.75)'],
+      borderColor: ['#0ea5e9','#8b5cf6'],
+      borderWidth: 2
+    }]
+  );
+
+  var ta = topEntries((byTipoSeg['Acreditados'] || {}), 8);
+  var tr = topEntries((byTipoSeg['Reconocidos'] || {}), 8);
+
+  makeChart('chart-tipos-acred', 'bar',
+    ta.map(function(pair) {
+      return pair[0].replace('Laboratorio de ', 'Lab. ').replace('Organismo ', 'Org. ');
+    }),
+    [{
+      label: 'Acreditados',
+      data: ta.map(function(pair) { return pair[1]; }),
+      backgroundColor: COLORS.sky,
+      borderRadius: 6
+    }],
+    {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        y: { grid: { display: false } }
+      }
+    }
+  );
+
+  makeChart('chart-tipos-rec', 'bar',
+    tr.map(function(pair) {
+      return pair[0].replace('Laboratorio de ', 'Lab. ').replace('Organismo ', 'Org. ');
+    }),
+    [{
+      label: 'Reconocidos',
+      data: tr.map(function(pair) { return pair[1]; }),
+      backgroundColor: COLORS.purple,
+      borderRadius: 6
+    }],
+    {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        y: { grid: { display: false } }
+      }
+    }
+  );
+
+  var pA = proy['Acreditados'] || {};
+  var pR = proy['Reconocidos'] || {};
+
+  var vigencia = Math.round(((Number(pA.indiceVigencia || 0) + Number(pR.indiceVigencia || 0)) / 2) * 100) / 100;
+  var crecimiento = Math.round(((Number(pA.potencialCrecimiento || 0) + Number(pR.potencialCrecimiento || 0)) / 2) * 100) / 100;
+  var riesgo = Math.round(((Number(pA.indiceRiesgo || 0) + Number(pR.indiceRiesgo || 0)) / 2) * 100) / 100;
+
+  var cards = [
+    {
+      title: 'Vigencia institucional',
+      text: 'Mide qué proporción de organismos se mantiene vigente frente al total registrado.',
+      val: vigencia,
+      color: 'text-emerald-600',
+      icon: 'fa-shield-halved'
+    },
+    {
+      title: 'Potencial de crecimiento',
+      text: 'Representa organismos en proceso que podrían fortalecer el padrón activo.',
+      val: crecimiento,
+      color: 'text-amber-500',
+      icon: 'fa-arrow-trend-up'
+    },
+    {
+      title: 'Nivel de atención',
+      text: 'Agrupa cancelados y suspendidos como señales para seguimiento estratégico.',
+      val: riesgo,
+      color: 'text-rose-500',
+      icon: 'fa-triangle-exclamation'
+    }
+  ];
+
+  qs('proyecciones-estado').innerHTML = cards.map(function(x) {
+    return ''
+      + '<div class="bg-slate-50 border border-slate-100 rounded-2xl p-5">'
+      + '  <i class="fas ' + x.icon + ' ' + x.color + ' text-2xl mb-3"></i>'
+      + '  <h3 class="font-black text-slate-800">' + esc(x.title) + '</h3>'
+      + '  <div class="text-3xl font-black ' + x.color + ' my-2">' + fmt(x.val) + '%</div>'
+      + '  <p class="text-sm text-slate-500">' + esc(x.text) + '</p>'
+      + '</div>';
+  }).join('');
+
+  OGA.data.compiladoRendered = true;
+}
+
+function loadSitios() {
+  setBusy(true, 'Cargando mapas de sitios...');
+
+  return callAPI('OGA_GET_SITIOS')
+    .then(function(res) {
+      if (!res || !res.success) {
+        throw new Error(res ? res.message : 'No se pudieron cargar sitios');
+      }
+
+      OGA.data.sitios = res;
+      setBusy(false);
+      renderSitios(res);
+    })
+    .catch(function(e) {
+      setBusy(false);
+      toast('Error cargando sitios: ' + e.message, 'err');
+    });
+}
+
+function renderSitios(d) {
+  var stats = d.stats || {};
+  var bySeg = stats.bySegmento || {};
+  var byPais = stats.byPais || {};
+  var byPaisSeg = stats.byPaisSegmento || {};
+
+  qs('sitios-total').textContent = fmt(d.total || 0);
+  qs('sitios-acred').textContent = fmt(bySeg['Acreditados'] || 0);
+  qs('sitios-rec').textContent = fmt(bySeg['Reconocidos'] || 0);
+  qs('sitios-paises').textContent = fmt(Object.keys(byPais).length || 0);
+
+  renderMapa('map-acreditados', d.markersAcreditados || [], [14.6349, -90.5069], 7);
+  renderMapa('map-reconocidos', d.markersReconocidos || [], [14.6349, -90.5069], 5);
+
+  renderBars('geo-list-acred', byPaisSeg['Acreditados'] || {}, 'bg-sky-400');
+  renderBars('geo-list-rec', byPaisSeg['Reconocidos'] || {}, 'bg-purple-400');
+
+  var paises = topEntries(byPais, 12);
+
+  makeChart('chart-sitios-global', 'bar',
+    paises.map(function(pair) { return pair[0]; }),
+    [{
+      label: 'Sitios detectados',
+      data: paises.map(function(pair) { return pair[1]; }),
+      backgroundColor: COLORS.emerald,
+      borderRadius: 6
+    }],
+    {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+      }
+    }
+  );
+}
+
+function renderMapa(mapId, markers, center, zoom) {
+  if (typeof L === 'undefined') {
+    toast('Leaflet no cargó. No se puede mostrar el mapa.', 'err');
+    return;
+  }
+
+  if (!MAPS[mapId]) {
+    MAPS[mapId] = L.map(mapId, { scrollWheelZoom: false }).setView(center, zoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(MAPS[mapId]);
+
+    MARKER_LAYERS[mapId] = L.layerGroup().addTo(MAPS[mapId]);
+  }
+
+  MARKER_LAYERS[mapId].clearLayers();
+
+  var bounds = [];
+
+  (markers || []).forEach(function(m) {
+    if (!m.lat || !m.lng) return;
+
+    var popup = ''
+      + '<div style="font-family:Arial,sans-serif;min-width:230px">'
+      + '  <strong>' + esc(m.sitioNom || m.razon || 'Sitio OGA') + '</strong><br>'
+      + '  <span style="font-size:12px;color:#475569">' + esc(m.oecId || '') + ' · ' + esc(m.segmento || '') + '</span>'
+      + '  <hr style="margin:6px 0">'
+      + '  <b>Tipo:</b> ' + esc(m.tipo || '') + '<br>'
+      + '  <b>País:</b> ' + esc(m.pais || '') + '<br>'
+      + '  <b>Ubicación:</b> ' + esc(m.label || '') + '<br>'
+      + '  <b>Estado:</b> ' + esc(m.estado || '') + '<br>'
+      + '  <small>' + esc(m.direccion || '') + '</small>'
+      + '</div>';
+
+    L.marker([Number(m.lat), Number(m.lng)]).bindPopup(popup).addTo(MARKER_LAYERS[mapId]);
+    bounds.push([Number(m.lat), Number(m.lng)]);
+  });
+
+  if (bounds.length) {
+    MAPS[mapId].fitBounds(bounds, { padding: [28, 28] });
+  } else {
+    MAPS[mapId].setView(center, zoom);
+  }
+
+  setTimeout(function() {
+    MAPS[mapId].invalidateSize();
+  }, 250);
+}
+
+function fillDirectorioCatalogos() {
+  var cat = OGA.data.catalogos || {};
+
+  fillSelect('dir-estado', cat.estados || []);
+  fillSelect('dir-tipo', cat.tipos || []);
+  fillSelect('dir-norma', cat.normas || []);
+}
+
+function fillSelect(id, values) {
+  var el = qs(id);
+  if (!el) return;
+
+  var current = el.value;
+  var first = el.querySelector('option') ? el.querySelector('option').outerHTML : '<option value="">Todos</option>';
+
+  el.innerHTML = first + (values || []).map(function(v) {
+    return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+  }).join('');
+
+  var exists = false;
+  Array.prototype.forEach.call(el.options, function(o) {
+    if (o.value === current) exists = true;
+  });
+
+  if (exists) el.value = current;
+}
+
+function cargarDirectorio() {
+  var clientes = OGA.data.clientes || [];
+
+  var segmento = qs('dir-segmento').value;
+  var estado = qs('dir-estado').value;
+  var tipo = qs('dir-tipo').value;
+  var norma = qs('dir-norma').value;
+  var texto = qs('dir-texto').value.trim().toLowerCase();
+
+  var rows = clientes.filter(function(c) {
+    if (segmento && c.segmento !== segmento) return false;
+    if (estado && c.estado !== estado) return false;
+    if (tipo && c.tipo !== tipo) return false;
+    if (norma && c.norma !== norma) return false;
+
+    if (texto) {
+      var blob = [
+        c.oecId, c.razon, c.segmento, c.tipo, c.norma,
+        c.estado, c.contacto, c.email
+      ].join(' ').toLowerCase();
+
+      if (blob.indexOf(texto) < 0) return false;
+    }
+
+    return true;
+  });
+
+  qs('dir-count').textContent = fmt(rows.length) + ' registros';
+
+  if (!rows.length) {
+    qs('directorio-tabla').innerHTML = ''
+      + '<div class="text-center text-slate-400 py-10">'
+      + '  <i class="fas fa-search text-3xl mb-3"></i>'
+      + '  <p>No se encontraron OECs con los filtros aplicados.</p>'
+      + '</div>';
+    return;
+  }
+
+  qs('directorio-tabla').innerHTML = ''
+    + '<table>'
+    + '  <thead>'
+    + '    <tr>'
+    + '      <th>ID OEC</th>'
+    + '      <th>Razón Social</th>'
+    + '      <th>Segmento</th>'
+    + '      <th>Tipo de organismo</th>'
+    + '      <th>Norma</th>'
+    + '      <th>Estado</th>'
+    + '      <th>Contacto</th>'
+    + '      <th>Email</th>'
+    + '      <th>Acreditado / Reconocido desde</th>'
+    + '    </tr>'
+    + '  </thead>'
+    + '  <tbody>'
+    + rows.map(function(c) {
+      var email = c.email
+        ? '<a href="mailto:' + esc(c.email) + '" class="text-sky-600 hover:underline">' + esc(c.email) + '</a>'
+        : '-';
+
+      return ''
+        + '<tr>'
+        + '  <td class="mono font-black text-sky-700">' + esc(c.oecId) + '</td>'
+        + '  <td class="font-bold text-slate-800">' + esc(c.razon) + '</td>'
+        + '  <td>' + badgeSegmento(c.segmento) + '</td>'
+        + '  <td class="text-xs">' + esc(c.tipo) + '</td>'
+        + '  <td class="text-xs font-semibold text-emerald-700">' + esc(c.norma) + '</td>'
+        + '  <td>' + badgeEstado(c.estado) + '</td>'
+        + '  <td class="text-xs">' + esc(c.contacto || '-') + '</td>'
+        + '  <td class="text-xs">' + email + '</td>'
+        + '  <td class="text-xs">' + esc(c.acredDesde || '-') + '</td>'
+        + '</tr>';
+    }).join('')
+    + '  </tbody>'
+    + '</table>';
+}
+
+function showLogout() {
+  qs('logout-modal').classList.add('show');
+}
+
+function closeLogout() {
+  qs('logout-modal').classList.remove('show');
+}
+
+function confirmLogout() {
+  var btn = qs('btn-logout');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Cerrando...';
+
+  callAPI('LOGOUT')
+    .catch(function() {})
+    .finally(function() {
+      localStorage.clear();
+      sessionStorage.clear();
+
+      setTimeout(function() {
+        window.top.location.href = OGA.appUrl + '?page=login';
+      }, 500);
+    });
+}
+</script>
+
+</body>
+</html>

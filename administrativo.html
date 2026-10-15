@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrativo | Sistema DSNC</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --border: #d9e2ef;
+      --primary: #315bdc;
+      --success: #0f8b5f;
+      --danger: #d62d2d;
+      --warning: #d97706;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: #0f172a; color: white; padding: 22px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; }
+    .brand { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+    .brand-logo { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, #5d5cde, #10b981); font-weight: 900; }
+    .brand-title { font-weight: 900; line-height: 1.1; }
+    .brand-subtitle { color: #94a3b8; font-size: 12px; margin-top: 3px; }
+    .nav-group-title { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin: 10px 0 6px; font-weight: 800; }
+    .nav-btn { width: 100%; border: 0; padding: 12px 13px; border-radius: 13px; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 800; transition: 0.18s ease; }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+    .nav-btn.active { background: white; color: #0f172a; }
+    .sidebar-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .topbar { background: rgba(255, 255, 255, 0.92); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 15; }
+    .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 28px; }
+    .page-title { margin: 0; font-size: 24px; letter-spacing: -0.04em; }
+    .page-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+    .session-card { text-align: right; font-size: 13px; color: var(--muted); }
+    .session-card strong { display: block; color: var(--text); font-size: 14px; }
+    .content { padding: 28px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .grid { display: grid; gap: 18px; }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .card-head { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .card-title { margin: 0; font-size: 17px; font-weight: 900; }
+    .card-body { padding: 20px; }
+    .kpi { padding: 20px; }
+    .kpi-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; }
+    .kpi-value { margin-top: 10px; font-size: 34px; font-weight: 900; letter-spacing: -0.05em; }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .input, .select, .textarea { width: 100%; min-height: 42px; border: 1px solid var(--border); border-radius: 12px; background: white; color: var(--text); padding: 10px 12px; outline: none; }
+    .textarea { min-height: 110px; resize: vertical; }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(49, 91, 220, 0.12); }
+    .field { display: grid; gap: 7px; }
+    .field label { font-size: 13px; font-weight: 900; color: #334155; }
+    .btn { min-height: 42px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; background: white; color: var(--text); font-weight: 900; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.16s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { border-color: var(--primary); background: var(--primary); color: white; }
+    .btn.success { border-color: var(--success); background: var(--success); color: white; }
+    .btn.danger { border-color: var(--danger); background: var(--danger); color: white; }
+    .btn.warning { border-color: var(--warning); background: var(--warning); color: white; }
+    .btn.small { min-height: 34px; padding: 7px 10px; border-radius: 10px; font-size: 12px; }
+    .btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+    .table-wrap { overflow: auto; max-width: 100%; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th { background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 13px 14px; border-bottom: 1px solid #edf2f7; vertical-align: top; font-size: 14px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 900; white-space: nowrap; }
+    .badge.ok { background: #dcfce7; color: #166534; }
+    .badge.off { background: #fee2e2; color: #991b1b; }
+    .badge.info { background: #dbeafe; color: #1e40af; }
+    .badge.gray { background: #e2e8f0; color: #334155; }
+    .empty { text-align: center; color: var(--muted); padding: 28px; }
+    .status-box { border-radius: 14px; background: #f8fafc; border: 1px solid var(--border); padding: 14px; font-family: Consolas, Monaco, monospace; font-size: 12px; white-space: pre-wrap; overflow: auto; max-height: 360px; }
+    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 200; background: #0f172a; color: white; padding: 14px 16px; border-radius: 14px; box-shadow: var(--shadow); transform: translateY(20px); opacity: 0; pointer-events: none; transition: 0.2s ease; max-width: 420px; font-weight: 800; }
+    .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); }
+    .modal { position: fixed; inset: 0; z-index: 180; background: rgba(15, 23, 42, 0.45); display: none; place-items: center; padding: 20px; }
+    .modal.show { display: grid; }
+    .modal-card { width: min(760px, 100%); max-height: 92vh; overflow: auto; background: white; border-radius: 22px; box-shadow: var(--shadow); }
+    .modal-head, .modal-foot { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .modal-foot { border-bottom: 0; border-top: 1px solid var(--border); justify-content: flex-end; }
+    .modal-body { padding: 20px; }
+    .mobile-toggle { display: none; }
+
+    .app-blocker { position: fixed; inset: 0; z-index: 999999; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(15, 23, 42, 0.70); backdrop-filter: blur(7px); }
+    .app-blocker.show { display: flex; }
+    .blocker-card { width: min(520px, 94vw); background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 30px 90px rgba(0,0,0,.32); padding: 30px; text-align: center; }
+    .blocker-spinner { width: 58px; height: 58px; border-radius: 999px; border: 5px solid #dbeafe; border-top-color: var(--primary, #315bdc); margin: 0 auto 18px; animation: blockerSpin .75s linear infinite; }
+    @keyframes blockerSpin { to { transform: rotate(360deg); } }
+    .blocker-icon { display: none; width: 62px; height: 62px; border-radius: 999px; margin: 0 auto 16px; align-items: center; justify-content: center; background: #fee2e2; color: #991b1b; font-size: 32px; font-weight: 900; }
+    .blocker-title { margin: 0; font-size: 22px; font-weight: 900; color: #0f172a; }
+    .blocker-message { margin: 10px 0 0; color: #475569; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+    .blocker-detail { display: none; margin-top: 15px; padding: 13px; border-radius: 13px; background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; font-family: Consolas, Monaco, monospace; font-size: 12px; text-align: left; max-height: 210px; overflow: auto; white-space: pre-wrap; }
+    .blocker-actions { display: none; margin-top: 18px; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .blocker-btn { min-height: 40px; border: 0; border-radius: 12px; padding: 9px 16px; font-weight: 900; cursor: pointer; }
+    .blocker-btn.primary { background: #315bdc; color: #fff; }
+    .blocker-btn.danger { background: #dc2626; color: #fff; }
+    .app-blocker.error .blocker-spinner { display: none; }
+    .app-blocker.error .blocker-icon { display: flex; }
+    .app-blocker.error .blocker-detail { display: block; }
+    .app-blocker.error .blocker-actions { display: flex; }
+    body.is-loading { overflow: hidden; }
+    body.is-loading .layout { pointer-events: none; user-select: none; }
+    body.is-loading #appBlocker { pointer-events: auto; user-select: auto; }
+
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; transform: translateX(-105%); transition: 0.22s ease; z-index: 100; width: 280px; }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-toggle { display: inline-flex; }
+      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .topbar-inner { padding: 16px; }
+      .content { padding: 16px; }
+    }
+    /* Tablas de consulta con lectura cómoda y cabeceras persistentes */
+    .table-wrap { max-height:540px; border-top:1px solid var(--border); }
+    .table-wrap thead th { position:sticky;top:0;z-index:2;background:#edf3fb; }
+    .table-wrap tbody tr:nth-child(even) {background:#f7fafd;}
+    .table-wrap tbody tr:hover {background:#eaf1ff;}
+    .table-wrap td {max-width:320px;overflow-wrap:anywhere;line-height:1.5;}
+    .pn-chart{margin-top:16px;padding:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;}
+    .pn-chart h3{font-size:15px;margin:0 0 14px;color:#183153;}
+    .pn-bar-row{display:grid;grid-template-columns:minmax(115px,200px) 1fr 75px;gap:12px;align-items:center;margin:9px 0;font-size:12px;}
+    .pn-bar-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pn-track{height:15px;background:#e2e8f0;border-radius:10px;overflow:hidden;}
+    .pn-fill{height:100%;background:linear-gradient(90deg,#2364c6,#34a2b7);border-radius:10px;}
+    @media(max-width:650px){.pn-bar-row{grid-template-columns:95px 1fr 52px;gap:6px;}.pn-chart{padding:12px;}}
+    /* PNCal UI QA: sin frameworks adicionales para evitar conflictos con Apps Script. */
+    .pn-quick-links {grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+    .pn-info {padding:11px 18px;background:#f1f5f9;color:#475569;font-size:12px;border-top:1px solid #dbe3ef}
+    .pn-num {text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .pn-tag {background:#e8efff;color:#2044a4;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}
+    .kpi-note {font-size:12px;color:#64748b;line-height:1.45;margin-top:12px}
+    .card.kpi {min-width:0;}
+    .table-wrap {overflow:auto;max-width:100%}
+    .table-wrap table {border-collapse:separate;border-spacing:0;width:100%;min-width:690px}
+    .table-wrap th {white-space:nowrap;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#475569}
+    .table-wrap td {font-size:12px;border-bottom:1px solid #e8edf5;vertical-align:middle}
+    .nav-btn:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible {outline:3px solid #93c5fd;outline-offset:2px}
+    @media(max-width:680px){.topbar-inner{align-items:flex-start}.grid.pn-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}.page-title{font-size:20px}.kpi-value{font-size:25px}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand"><div class="brand-logo">AD</div><div><div class="brand-title">Admin DSNC</div><div class="brand-subtitle">Indicadores PNCal</div></div></div>
+      <div>
+        <div class="nav-group-title">Principal</div>
+        <button class="nav-btn active" data-section="dashboard"><span>🏠</span><span>Dashboard</span></button>
+        <button class="nav-btn" data-section="usuarios"><span>👥</span><span>Usuarios</span></button>
+        <button class="nav-btn" data-section="indicadores"><span>📊</span><span>Indicadores</span></button>
+        <button class="nav-btn" data-section="oga"><span>🗺️</span><span>OGA</span></button>
+        <button class="nav-btn" data-section="cename"><span>⚖️</span><span>CENAME</span></button>
+        <button class="nav-btn" data-section="coguanor"><span>📚</span><span>COGUANOR</span></button>
+        <button class="nav-btn" data-section="cretec"><span>📣</span><span>CRETEC</span></button>
+      </div>
+      <div>
+        <div class="nav-group-title">Administración</div>
+        <button class="nav-btn" data-section="correos"><span>✉️</span><span>Correos</span></button>
+        <button class="nav-btn" data-section="logs"><span>📋</span><span>Bitácora</span></button>
+        <button class="nav-btn" data-section="diagnostico"><span>🛠️</span><span>Diagnóstico</span></button>
+      </div>
+      <div class="sidebar-footer"><button class="nav-btn" onclick="cerrarSesionSeguro()"><span>🚪</span><span>Cerrar sesión</span></button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div class="topbar-inner"><div style="display:flex;align-items:center;gap:12px"><button id="mobileBtn" class="btn mobile-toggle">☰</button><div><h1 id="pageTitle" class="page-title">Dashboard Administrativo</h1><p id="pageSubtitle" class="page-subtitle">Panel central para seguimiento de usuarios, indicadores y módulos.</p></div></div><div class="session-card"><strong id="sessionUser">Administrador</strong><span id="sessionRole">Validando sesión...</span></div></div></header>
+      <div class="content">
+        <section id="section-dashboard" class="section active">
+          <div class="grid grid-4">
+            <div class="card kpi"><div class="kpi-label">Usuarios</div><div id="kpiUsers" class="kpi-value">—</div></div>
+            <div class="card kpi"><div class="kpi-label">Activos</div><div id="kpiActiveUsers" class="kpi-value">—</div></div>
+            <div class="card kpi"><div class="kpi-label">Indicadores</div><div id="kpiIndicators" class="kpi-value">—</div></div>
+            <div class="card kpi"><div class="kpi-label">Estado</div><div id="kpiStatus" class="kpi-value" style="font-size:24px">Conectando</div></div>
+          </div>
+          <div class="card" style="margin-top:18px"><div class="card-head"><h2 class="card-title">Accesos rápidos</h2></div><div class="card-body"><div class="grid pn-quick-links"><button class="btn" onclick="abrirSeccion('usuarios')">👥 Usuarios</button><button class="btn" onclick="abrirSeccion('indicadores')">📊 Indicadores</button><button class="btn" onclick="abrirSeccion('oga')">🗺️ OGA</button><button class="btn" onclick="abrirSeccion('coguanor')">📚 COGUANOR</button><button class="btn" onclick="abrirSeccion('cretec')">📋 CRETEC</button><button class="btn" onclick="abrirSeccion('cename')">⚖️ CENAME</button><button class="btn" onclick="abrirSeccion('correos')">✉️ Correos</button></div></div></div>
+          <div class="card" style="margin-top:18px"><div class="card-head"><h2 class="card-title">Indicadores por unidad</h2><button class="btn" onclick="cargarResumenVisual()">Actualizar gráficas</button></div><div class="card-body"><div id="dashboardUnidades" class="grid grid-4"></div><div id="dashboardBarras" class="pn-chart"></div></div></div>
+        </section>
+
+        <section id="section-usuarios" class="section"><div class="card"><div class="card-head"><h2 class="card-title">CRUD de usuarios</h2><div class="toolbar"><input id="searchUsers" class="input" style="width:250px" placeholder="Buscar usuario..."><select id="filterDept" class="select" style="width:150px"><option value="">Todos</option><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select><button class="btn" onclick="cargarUsuarios()">🔄 Actualizar</button><button class="btn primary" onclick="abrirModalUsuario()">➕ Nuevo</button></div></div><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Departamento</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody id="usersBody"><tr><td colspan="8" class="empty">Cargando usuarios...</td></tr></tbody></table></div></div></section>
+
+        <section id="section-indicadores" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores globales</h2><button class="btn primary" onclick="cargarIndicadores()">🔄 Cargar indicadores</button></div><div class="card-body"><div id="indicatorSummary" class="grid grid-3"></div><div id="indicadoresGraficas" class="pn-chart"></div></div><div class="pn-info" id="indicatorRowsInfo">Seleccione «Cargar indicadores» para consultar datos.</div><div class="table-wrap"><table><thead id="indicatorHead"></thead><tbody id="indicatorBody"><tr><td class="empty">Presione cargar indicadores.</td></tr></tbody></table></div></div></section>
+
+        <section id="section-oga" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Panel OGA</h2><div class="toolbar"><button class="btn" onclick="abrirDashboardOGA()">📊 Ver dashboard de decisiones</button><button class="btn primary" onclick="cargarOGA()">🔄 Actualizar OGA</button></div></div><div class="card-body"><div id="ogaKpis" class="grid grid-4"></div></div><div class="table-wrap"><table><thead><tr><th>Registro</th><th>Razón social</th><th>Tipo</th><th>Norma</th><th>Segmento</th><th>Estado</th></tr></thead><tbody id="ogaBody"><tr><td colspan="6" class="empty">Presione actualizar OGA.</td></tr></tbody></table></div></div></section>
+
+        <section id="section-cename" class="section"><div class="card"><div class="card-head"><h2 class="card-title">CENAME · Indicadores mensuales</h2><div class="toolbar"><input type="number" id="cenameYear" class="input" style="width:100px" min="2000" max="2100" placeholder="Año"><select id="cenameMonth" class="select" style="width:145px"><option value="">Todos los meses</option></select><button class="btn primary" onclick="cargarCENAME()">Actualizar</button></div></div><div class="card-body"><div id="cenameKpis" class="grid grid-4"></div><div id="cenameMensual" class="pn-chart"></div><div id="cenameLaboratorios" class="pn-chart"></div><div id="cenameSectores" class="pn-chart"></div></div><div class="pn-info" id="cenameRowsInfo">Seleccione filtros y actualice para consultar CENAME.</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Categoría</th><th>Laboratorio / tipo</th><th>Calibraciones</th><th>Certificados</th><th>Estaciones</th><th>Dispensadores</th><th>Huella (Q)</th></tr></thead><tbody id="cenameBody"><tr><td colspan="9" class="empty">Presione cargar CENAME.</td></tr></tbody></table></div></div></section>
+
+        <section id="section-coguanor" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores COGUANOR</h2><button class="btn primary" onclick="cargarUnidad('COGUANOR')">Actualizar</button></div><div class="card-body"><div id="coguanorKpis" class="grid grid-3"></div><div id="coguanorChart" class="pn-chart"></div></div><div class="pn-info" id="coguanorRowsInfo"></div><div class="table-wrap"><table><thead id="coguanorHead"></thead><tbody id="coguanorBody"></tbody></table></div></div></section>
+        <section id="section-cretec" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores CRETEC</h2><button class="btn primary" onclick="cargarUnidad('CRETEC')">Actualizar</button></div><div class="card-body"><div id="cretecKpis" class="grid grid-3"></div><div id="cretecChart" class="pn-chart"></div></div><div class="pn-info" id="cretecRowsInfo"></div><div class="table-wrap"><table><thead id="cretecHead"></thead><tbody id="cretecBody"></tbody></table></div></div></section>
+
+        <section id="section-correos" class="section"><div class="grid grid-2"><div class="card"><div class="card-head"><h2 class="card-title">Configurar correos</h2></div><div class="card-body"><div class="grid"><div class="field"><label>Departamento</label><select id="mailDept" class="select" onchange="cargarCorreosDepto()"><option value="">Seleccione</option><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Correos separados por coma</label><textarea id="mailEmails" class="textarea"></textarea></div><button class="btn primary" onclick="guardarCorreosDepto()">💾 Guardar correos</button></div></div></div><div class="card"><div class="card-head"><h2 class="card-title">Enviar recordatorio</h2></div><div class="card-body"><div class="grid"><div class="field"><label>Departamento</label><select id="sendDept" class="select"><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Destinatarios</label><textarea id="sendEmails" class="textarea"></textarea></div><div class="field"><label>Asunto</label><input id="sendSubject" class="input" value="Recordatorio de carga de indicadores"></div><div class="field"><label>Mensaje</label><textarea id="sendMessage" class="textarea">Estimados usuarios, se les recuerda registrar o validar la información correspondiente en el Sistema DSNC.</textarea></div><button class="btn success" onclick="enviarRecordatorio()">✉️ Enviar</button></div></div></div></div></section>
+
+        <section id="section-logs" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Bitácora del sistema</h2><button class="btn primary" onclick="cargarLogs()">🔄 Actualizar</button></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Departamento</th><th>Acción</th><th>Detalles</th></tr></thead><tbody id="logsBody"><tr><td colspan="5" class="empty">Presione actualizar.</td></tr></tbody></table></div></div></section>
+
+        <section id="section-diagnostico" class="section"><div class="grid grid-2"><div class="card"><div class="card-head"><h2 class="card-title">Sesión</h2><button class="btn primary" onclick="validarSesionInicial()">🔐 Validar</button></div><div class="card-body"><div id="sessionDiag" class="status-box"></div></div></div><div class="card"><div class="card-head"><h2 class="card-title">Conexión API</h2><button class="btn primary" onclick="probarConexion()">🌐 Probar</button></div><div class="card-body"><div id="apiDiag" class="status-box"></div></div></div></div></section>
+      </div>
+    </main>
+  </div>
+
+  <div id="ogaReportModal" class="modal" role="dialog" aria-label="Dashboard OGA"><div class="modal-card" style="width:min(1200px,96vw)"><div class="modal-head"><h2 class="card-title">Dashboard de indicadores OGA</h2><div class="toolbar"><a class="btn" href="https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec" target="_blank" rel="noopener noreferrer">Abrir en otra pestaña</a><button class="btn" onclick="cerrarDashboardOGA()">✕ Cerrar</button></div></div><div class="card-body"><p style="font-size:12px;color:#64748b">Si Google impide mostrar el dashboard aquí por sus políticas de seguridad, utilice «Abrir en otra pestaña».</p><iframe id="ogaDashboardFrame" title="Indicadores OGA" style="width:100%;height:65vh;border:1px solid #e2e8f0;border-radius:12px" referrerpolicy="no-referrer"></iframe></div></div></div>
+  <div id="userModal" class="modal"><form id="userForm" class="modal-card"><div class="modal-head"><h2 id="modalTitle" class="card-title">Nuevo usuario</h2><button type="button" class="btn" onclick="cerrarModalUsuario()">✕</button></div><div class="modal-body"><input type="hidden" id="originalUsername"><div class="grid grid-2"><div class="field"><label>Usuario</label><input id="username" class="input" required placeholder="usuario.dsnc"></div><div class="field"><label>Correo</label><input id="email" type="email" class="input" placeholder="correo@dominio.gt"></div><div class="field"><label>Contraseña</label><input id="password" class="input" type="password" autocomplete="new-password" placeholder="Obligatoria al crear"></div><div class="field"><label>Departamento</label><select id="department" class="select"><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Rol</label><select id="role" class="select"><option value="Administrador">Administrador</option><option value="Jefe">Jefe</option><option value="Usuario">Usuario</option></select></div><div class="field"><label>Estado</label><select id="status" class="select"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div></div><label style="display:flex;gap:8px;align-items:center;margin-top:18px;font-weight:900"><input type="checkbox" id="sendCredentials">Enviar credenciales por correo al guardar</label></div><div class="modal-foot"><button type="button" class="btn" onclick="cerrarModalUsuario()">Cancelar</button><button type="submit" class="btn primary" id="saveUserBtn">Guardar usuario</button></div></form></div>
+
+  <div id="toast" class="toast"></div>
+  <div id="appBlocker" class="app-blocker" aria-live="assertive" aria-modal="true" role="dialog"><div class="blocker-card"><div id="blockerSpinner" class="blocker-spinner"></div><div id="blockerIcon" class="blocker-icon">!</div><h3 id="blockerTitle" class="blocker-title">Cargando datos</h3><p id="blockerMessage" class="blocker-message">Espere un momento, el sistema está consultando la información.</p><div id="blockerDetail" class="blocker-detail"></div><div id="blockerActions" class="blocker-actions"><button type="button" class="blocker-btn primary" onclick="cerrarBloqueoError()">Cerrar</button><button type="button" class="blocker-btn danger" onclick="irLogin()">Ir al login</button></div></div></div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      const APP_URL = <?!= JSON.stringify(appUrl || '') ?>;
+      const PAGE_NAME = <?!= JSON.stringify(page || 'administrativo') ?>;
+      let currentSection = 'dashboard';
+      let users = [];
+      let logs = [];
+      let ACTIVE_AUTH = null;
+      let ACTIVE_USER = null;
+
+      function byId(id) { return document.getElementById(id); }
+      function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+      function norm(value) { return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+      function renderObject(obj) { try { return JSON.stringify(obj, null, 2); } catch(e) { return String(obj); } }
+      function safeStringify(obj) { return renderObject(obj); }
+      function getAppUrl() { return APP_URL || String(window.location.href || '').split('?')[0]; }
+
+      function normalizeText(value) {
+        return String(value || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function normalizeRole(value) {
+        const role = normalizeText(value);
+
+        if (
+          role === 'administrador' ||
+          role === 'admin' ||
+          role === 'superadmin' ||
+          role === 'super administrador'
+        ) {
+          return 'administrador';
+        }
+
+        if (role === 'jefe' || role === 'jefe oga' || role === 'director') {
+          return 'jefe';
+        }
+
+        if (role === 'usuario' || role === 'user') {
+          return 'usuario';
+        }
+
+        return role;
+      }
+
+      function isAdminRole(value) {
+        return normalizeRole(value) === 'administrador';
+      }
+
+      function normalizeUserObject(user, fallbackAuth) {
+        user = user || {};
+        fallbackAuth = fallbackAuth || {};
+
+        return {
+          username: user.username || user.user || fallbackAuth.username || '',
+          name: user.name || user.nombre || user.fullName || user.username || fallbackAuth.username || 'Administrador',
+          email: user.email || user.correo || '',
+          department: user.department || user.departamento || '',
+          role: user.role || user.rol || '',
+          status: user.status || user.estado || ''
+        };
+      }
+
+      function readAuthFromStorage() {
+        let raw = '';
+
+        try {
+          raw = sessionStorage.getItem('dsnc_auth') || '';
+        } catch(e) {}
+
+        if (!raw) {
+          try {
+            raw = localStorage.getItem('dsnc_auth') || '';
+          } catch(e) {}
+        }
+
+        if (!raw) return null;
+
+        try {
+          const auth = JSON.parse(raw);
+
+          if (!auth || !auth.username || !auth.password) {
+            return null;
+          }
+
+          auth.username = String(auth.username || '').trim().toLowerCase();
+          auth.password = String(auth.password || '').trim();
+          auth.user = normalizeUserObject(auth.user || {}, auth);
+
+          return auth;
+        } catch(e) {
+          console.error('No se pudo leer dsnc_auth:', e);
+          return null;
+        }
+      }
+
+      function getAuth() {
+        if (ACTIVE_AUTH && ACTIVE_AUTH.username && ACTIVE_AUTH.password) {
+          return ACTIVE_AUTH;
+        }
+
+        const auth = readAuthFromStorage();
+
+        if (!auth) {
+          return null;
+        }
+
+        ACTIVE_AUTH = auth;
+
+        try {
+          sessionStorage.setItem('dsnc_auth', JSON.stringify(auth));
+          sessionStorage.setItem('dsnc_active', 'true');
+        } catch(e) {}
+
+        return ACTIVE_AUTH;
+      }
+
+      function setSessionUser(user) {
+        ACTIVE_USER = normalizeUserObject(user || {}, getAuth() || {});
+
+        byId('sessionUser').textContent =
+          ACTIVE_USER.name ||
+          ACTIVE_USER.username ||
+          'Administrador';
+
+        byId('sessionRole').textContent = [
+          ACTIVE_USER.role || 'Rol no recibido',
+          ACTIVE_USER.department || 'Depto no recibido'
+        ].join(' - ');
+      }
+
+      function irLogin() {
+        try {
+          sessionStorage.removeItem('dsnc_auth');
+          sessionStorage.removeItem('dsnc_active');
+          localStorage.removeItem('dsnc_auth');
+          localStorage.removeItem('dsnc_user');
+          localStorage.removeItem('dsnc_session');
+          sessionStorage.removeItem('dsnc_session');
+        } catch(e) {}
+
+        const url = getAppUrl() + '?page=login';
+
+        try {
+          window.location.href = url;
+        } catch(error) {
+          location.assign(url);
+        }
+      }
+
+      function bloquearPantalla(titulo, mensaje) {
+        const blocker = byId('appBlocker');
+        if (!blocker) return;
+        blocker.classList.remove('error');
+        blocker.classList.add('show');
+        document.body.classList.add('is-loading');
+        byId('blockerTitle').textContent = titulo || 'Cargando datos';
+        byId('blockerMessage').textContent = mensaje || 'Espere un momento.';
+        byId('blockerDetail').textContent = '';
+      }
+
+      function desbloquearPantalla() {
+        const blocker = byId('appBlocker');
+        if (blocker) {
+          blocker.classList.remove('show');
+          blocker.classList.remove('error');
+        }
+        document.body.classList.remove('is-loading');
+      }
+
+      function mostrarErrorBloqueo(titulo, mensaje, detalle) {
+        const blocker = byId('appBlocker');
+        if (!blocker) return;
+        blocker.classList.add('show');
+        blocker.classList.add('error');
+        document.body.classList.add('is-loading');
+        byId('blockerTitle').textContent = titulo || 'Error';
+        byId('blockerMessage').textContent = mensaje || 'No se pudo completar la operación.';
+        byId('blockerDetail').textContent = detalle || '';
+      }
+
+      function cerrarBloqueoError() { desbloquearPantalla(); }
+      function toast(message, type) { const el = byId('toast'); el.textContent = message || ''; el.className = 'toast show ' + (type || ''); clearTimeout(el._timer); el._timer = setTimeout(function() { el.className = 'toast'; }, 4500); }
+      function badgeStatus(status) { const text = String(status || 'N/A'); return '<span class="badge ' + (norm(text) === 'activo' ? 'ok' : 'off') + '">' + esc(text) + '</span>'; }
+      function badgeRole(role) { const text = String(role || 'N/A'); return '<span class="badge ' + (text === 'Administrador' ? 'info' : 'gray') + '">' + esc(text) + '</span>'; }
+
+      async function api(action, params, opciones) {
+        params = params || {};
+        opciones = opciones || {};
+        const usarBloqueo = opciones.bloqueo !== false;
+        if (usarBloqueo) bloquearPantalla(opciones.titulo || 'Cargando datos', opciones.mensaje || 'Consultando información del sistema.');
+
+        const auth = getAuth();
+        if (!auth && action !== 'TEST_CONNECTION') {
+          const result = { success:false, message:'No hay sesión local. Ingrese desde el login.', redirect:true };
+          if (usarBloqueo) mostrarErrorBloqueo('Sesión no válida', result.message, 'No existe sessionStorage.dsnc_auth.');
+          return result;
+        }
+
+        return new Promise(function(resolve) {
+          google.script.run
+            .withSuccessHandler(function(result) {
+              result = result || { success:false, message:'Respuesta vacía del servidor.' };
+              console.log('Respuesta dsncApi:', action, result);
+
+              if (result.success) {
+                if (usarBloqueo) desbloquearPantalla();
+                resolve(result);
+                return;
+              }
+
+              if (usarBloqueo) {
+                mostrarErrorBloqueo(result.redirect ? 'Sesión inválida' : 'Error del sistema', result.message || 'No se pudo completar la operación.', safeStringify(result));
+              }
+              resolve(result);
+            })
+            .withFailureHandler(function(error) {
+              const result = { success:false, message: error && error.message ? error.message : String(error) };
+              if (usarBloqueo) mostrarErrorBloqueo('Error de conexión con Apps Script', result.message, safeStringify(error));
+              resolve(result);
+            })
+            .dsncApi(action, params, auth || {});
+        });
+      }
+
+      async function validarSesionInicial() {
+        bloquearPantalla('Validando sesión', 'Comprobando credenciales administrativas.');
+        const auth = getAuth();
+        byId('sessionDiag').textContent = renderObject({ page: PAGE_NAME, authUser: auth ? auth.username : 'SIN_AUTH', appUrl: getAppUrl() });
+
+        if (!auth) {
+          byId('kpiStatus').textContent = 'Sin sesión';
+          mostrarErrorBloqueo('Sesión no válida', 'No existe sesión local. Regrese al login.', 'El login debe guardar sessionStorage.dsnc_auth.');
+          return false;
+        }
+
+        const result = await api('AUTH_CHECK', {}, { titulo:'Validando sesión', mensaje:'Comprobando usuario y contraseña contra la hoja Usuario.' });
+        if (!result.success) {
+          byId('kpiStatus').textContent = 'Sesión inválida';
+          mostrarErrorBloqueo('Sesión inválida', result.message || 'No se validaron las credenciales.', safeStringify(result));
+          return false;
+        }
+
+        const serverUser = normalizeUserObject(result.user || {}, auth);
+
+        if (!isAdminRole(serverUser.role)) {
+          byId('kpiStatus').textContent = 'Sin permisos';
+
+          mostrarErrorBloqueo(
+            'Acceso denegado',
+            'El panel administrativo requiere rol Administrador.',
+            'Usuario validado:\n' + safeStringify(serverUser) +
+            '\n\nRevise que la columna Rol de la hoja Usuario tenga Administrador o Admin.'
+          );
+
+          return false;
+        }
+
+        try {
+          const fixedAuth = Object.assign({}, auth, { user: serverUser });
+          sessionStorage.setItem('dsnc_auth', JSON.stringify(fixedAuth));
+          localStorage.setItem('dsnc_auth', JSON.stringify(fixedAuth));
+          ACTIVE_AUTH = fixedAuth;
+        } catch(e) {}
+
+        setSessionUser(serverUser);
+        byId('kpiStatus').textContent = 'Online';
+        desbloquearPantalla();
+        return true;
+      }
+
+      async function probarConexion() {
+        const result = await api('TEST_CONNECTION', {}, { titulo:'Probando conexión', mensaje:'Validando google.script.run.' });
+        byId('apiDiag').textContent = renderObject({ appUrl:getAppUrl(), result:result });
+        toast(result.success ? 'Conexión correcta.' : result.message, result.success ? 'success' : 'error');
+      }
+
+      function abrirSeccion(section) {
+        currentSection = section;
+        document.querySelectorAll('.section').forEach(function(el) { el.classList.remove('active'); });
+        const sectionEl = byId('section-' + section);
+        if (sectionEl) sectionEl.classList.add('active');
+        document.querySelectorAll('.nav-btn[data-section]').forEach(function(btn) { btn.classList.toggle('active', btn.dataset.section === section); });
+        const titles = {
+          dashboard: ['Dashboard Administrativo', 'Panel central para seguimiento de usuarios, indicadores y módulos.'],
+          usuarios: ['CRUD de usuarios', 'Crear, editar, activar, desactivar, resetear contraseña y enviar credenciales.'],
+          indicadores: ['Indicadores globales', 'Consulta consolidada de COGUANOR, CRETEC y CENAME.'],
+          oga: ['Panel OGA', 'Vista de organismos acreditados, reconocidos, sitios y decisiones.'],
+          cename: ['Panel CENAME', 'Consulta de cargas, registros y resumen mensual.'],
+          coguanor: ['Indicadores COGUANOR', 'Resultados de normalización, distribución y consultas.'],
+          cretec: ['Indicadores CRETEC', 'Capacitaciones, eventos y personas atendidas.'],
+          correos: ['Correos institucionales', 'Configuración de destinatarios y envío de recordatorios.'],
+          logs: ['Bitácora del sistema', 'Últimas acciones registradas por el sistema.'],
+          diagnostico: ['Diagnóstico', 'Validación de sesión, conexión y datos recibidos.']
+        };
+        byId('pageTitle').textContent = titles[section] ? titles[section][0] : 'Administrativo';
+        byId('pageSubtitle').textContent = titles[section] ? titles[section][1] : '';
+        byId('sidebar').classList.remove('open');
+        if (section === 'usuarios') cargarUsuarios();
+        if (section === 'indicadores') cargarIndicadores();
+        if (section === 'logs') cargarLogs();
+        if (section === 'cename') cargarCENAME();
+        if (section === 'oga') cargarOGA();
+        if (section === 'coguanor') cargarUnidad('COGUANOR');
+        if (section === 'cretec') cargarUnidad('CRETEC');
+      }
+
+      async function cargarDashboard() {
+        const userRes = await api('GET_USERS', {}, { titulo:'Cargando dashboard', mensaje:'Consultando usuarios del sistema.' });
+        if (userRes.success) {
+          users = userRes.users || [];
+          byId('kpiUsers').textContent = users.length;
+          byId('kpiActiveUsers').textContent = users.filter(function(u) { return norm(u.status) === 'activo'; }).length;
+        } else {
+          byId('kpiUsers').textContent = '—';
+          byId('kpiActiveUsers').textContent = '—';
+          return;
+        }
+
+        const indRes = await api('GET_ADMIN_ALL_INDICATORS', { limit:25 }, { titulo:'Cargando indicadores', mensaje:'Consultando indicadores consolidados.' });
+        if (indRes.success) {
+          const total = (indRes.departments || []).reduce(function(sum, dept) { return sum + (dept.totalRows == null ? 0 : Number(dept.totalRows || 0)); }, 0);
+          byId('kpiIndicators').textContent = total;
+          renderUnitSummary(indRes.departments || [], 'dashboardUnidades', 'dashboardBarras');
+        } else {
+          byId('kpiIndicators').textContent = '—';
+        }
+      }
+
+      async function cargarUsuarios() {
+        byId('usersBody').innerHTML = '<tr><td colspan="8" class="empty">Cargando usuarios...</td></tr>';
+        const result = await api('GET_USERS', {}, { titulo:'Cargando usuarios', mensaje:'Consultando lista de usuarios.' });
+        if (!result.success) { byId('usersBody').innerHTML = '<tr><td colspan="8" class="empty">' + esc(result.message || 'No se pudo cargar usuarios.') + '</td></tr>'; return; }
+        users = result.users || [];
+        renderUsuarios();
+      }
+
+      function renderUsuarios() {
+        const text = norm(byId('searchUsers').value);
+        const dept = byId('filterDept').value;
+        let filtered = users.slice();
+        if (dept) filtered = filtered.filter(function(u) { return String(u.department || '') === dept; });
+        if (text) filtered = filtered.filter(function(u) { return norm([u.username,u.name,u.email,u.department,u.role,u.status].join(' ')).indexOf(text) >= 0; });
+        if (!filtered.length) { byId('usersBody').innerHTML = '<tr><td colspan="8" class="empty">No hay usuarios para mostrar.</td></tr>'; return; }
+        byId('usersBody').innerHTML = filtered.map(function(u) {
+          const nextStatus = norm(u.status) === 'activo' ? 'Inactivo' : 'Activo';
+          return '<tr><td><strong>' + esc(u.username) + '</strong></td><td>' + esc(u.name || '') + '</td><td>' + esc(u.email || '') + '</td><td>' + esc(u.department || '') + '</td><td>' + badgeRole(u.role || '') + '</td><td>' + badgeStatus(u.status || '') + '</td><td>' + esc(u.lastAccess || 'N/A') + '</td><td><div class="toolbar"><button class="btn small" onclick="editarUsuario(\'' + esc(u.username) + '\')">Editar</button><button class="btn small warning" onclick="toggleEstado(\'' + esc(u.username) + '\', \'' + nextStatus + '\')">' + esc(nextStatus) + '</button><button class="btn small" onclick="resetPass(\'' + esc(u.username) + '\', false)">Reset</button><button class="btn small success" onclick="resetPass(\'' + esc(u.username) + '\', true)">Reset + correo</button><button class="btn small primary" onclick="enviarCredenciales(\'' + esc(u.username) + '\')">Enviar</button></div></td></tr>';
+        }).join('');
+      }
+
+      function abrirModalUsuario() { byId('modalTitle').textContent='Nuevo usuario'; byId('originalUsername').value=''; byId('username').value=''; byId('email').value=''; byId('password').value=''; byId('password').required=true; byId('department').value='DSNC'; byId('role').value='Usuario'; byId('status').value='Activo'; byId('sendCredentials').checked=false; byId('userModal').classList.add('show'); }
+      function cerrarModalUsuario() { byId('userModal').classList.remove('show'); }
+      function editarUsuario(username) { const user = users.find(function(u) { return String(u.username) === String(username); }); if (!user) { toast('Usuario no encontrado.', 'error'); return; } byId('modalTitle').textContent='Editar usuario'; byId('originalUsername').value=user.username || ''; byId('username').value=user.username || ''; byId('email').value=user.email || ''; byId('password').value=''; byId('password').required=false; byId('department').value=user.department || 'DSNC'; byId('role').value=user.role || 'Usuario'; byId('status').value=user.status || 'Activo'; byId('sendCredentials').checked=false; byId('userModal').classList.add('show'); }
+
+      async function guardarUsuario(event) {
+        event.preventDefault();
+        const originalUsername = byId('originalUsername').value.trim();
+        const payload = { originalUsername:originalUsername, username:byId('username').value.trim(), email:byId('email').value.trim(), password:byId('password').value.trim(), department:byId('department').value, role:byId('role').value, status:byId('status').value, sendCredentials:byId('sendCredentials').checked ? 'true' : 'false' };
+        if (!originalUsername && !payload.password) { toast('La contraseña es obligatoria para crear usuario.', 'warning'); return; }
+        const result = await api(originalUsername ? 'UPDATE_USER' : 'CREATE_USER', payload, { titulo:'Guardando usuario', mensaje:'Registrando cambios.' });
+        if (!result.success) return;
+        toast(result.message || 'Usuario guardado.', 'success');
+        cerrarModalUsuario();
+        await cargarUsuarios();
+        await cargarDashboard();
+      }
+
+      async function toggleEstado(username, status) { const user = users.find(function(u) { return String(u.username) === String(username); }); if (!user) return; if (!confirm('¿Desea cambiar el estado de ' + username + ' a ' + status + '?')) return; const result = await api('UPDATE_USER', { originalUsername:username, username:username, email:user.email || '', department:user.department || 'DSNC', role:user.role || 'Usuario', status:status }, { titulo:'Actualizando estado', mensaje:'Aplicando cambios al usuario.' }); if (!result.success) return; toast('Estado actualizado.', 'success'); await cargarUsuarios(); await cargarDashboard(); }
+      async function resetPass(username, sendEmail) { if (!confirm(sendEmail ? '¿Resetear contraseña y enviarla por correo?' : '¿Resetear contraseña?')) return; const result = await api('RESET_USER_PASSWORD', { username:username, sendEmail:sendEmail ? 'true' : 'false' }, { titulo:'Reseteando contraseña', mensaje:'Generando nueva contraseña.' }); if (!result.success) return; if (!sendEmail && result.password) alert('Nueva contraseña para ' + username + ':\n\n' + result.password); toast(result.message || 'Contraseña reseteada.', 'success'); }
+      async function enviarCredenciales(username) { if (!confirm('¿Enviar credenciales actuales por correo a ' + username + '?')) return; const result = await api('SEND_USER_CREDENTIALS', { username:username }, { titulo:'Enviando credenciales', mensaje:'Preparando correo institucional.' }); if (!result.success) return; toast(result.message || 'Credenciales enviadas.', 'success'); }
+
+      async function cargarIndicadores() {
+        byId('indicatorSummary').innerHTML='';
+        byId('indicatorHead').innerHTML='';
+        byId('indicatorBody').innerHTML='<tr><td colspan="6" class="empty">Consultando indicadores...</td></tr>';
+        const result=await api('GET_ADMIN_ALL_INDICATORS',{limit:300},{titulo:'Cargando indicadores',mensaje:'Consolidando unidades.'});
+        if(!result.success){byId('indicatorBody').innerHTML='<tr><td colspan="6" class="empty">'+esc(result.message||'Error al consultar')+'</td></tr>';return;}
+        renderUnitSummary(result.departments||[],'indicatorSummary','indicadoresGraficas');
+        const rows=result.combinedRows||[];
+        byId('indicatorHead').innerHTML='<tr><th>Unidad</th><th>Fila</th><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Cantidad / asistentes</th></tr>';
+        byId('indicatorBody').innerHTML=rows.length?rows.slice(0,200).map(r=>'<tr><td><span class="pn-tag">'+esc(r.unidad)+'</span></td><td>'+esc(r.registro)+'</td><td>'+esc(pnDate(r.fecha))+'</td><td>'+esc(r.tipo)+'</td><td>'+esc(r.concepto)+'</td><td class="pn-num">'+esc(pnNumero(r.cantidad))+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Sin registros para mostrar.</td></tr>';
+        byId('indicatorRowsInfo').textContent='Mostrando '+Math.min(rows.length,200)+' de '+rows.length+' filas consultadas. Los indicadores detallados de CENAME y OGA están en sus paneles.';
+      }
+
+      async function cargarOGA() {
+        byId('ogaKpis').innerHTML = '';
+        byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">Cargando OGA...</td></tr>';
+        const dash = await api('OGA_GET_DASHBOARD', {}, { titulo:'Cargando OGA', mensaje:'Consultando organismos y tablero.' });
+        if (!dash.success) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">' + esc(dash.message || 'No se pudo cargar OGA.') + '</td></tr>'; return; }
+        const stats = dash.clientesResumen && dash.clientesResumen.stats ? dash.clientesResumen.stats : {};
+        const kpis = stats.kpisSegmentados || {};
+        const acreditados = kpis.Acreditados || {};
+        const reconocidos = kpis.Reconocidos || {};
+        byId('ogaKpis').innerHTML = '<div class="card kpi"><div class="kpi-label">Acreditados vigentes</div><div class="kpi-value">' + esc(acreditados.total || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Reconocidos vigentes</div><div class="kpi-value">' + esc(reconocidos.total || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Universo acreditados</div><div class="kpi-value">' + esc(acreditados.universo || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Universo reconocidos</div><div class="kpi-value">' + esc(reconocidos.universo || 0) + '</div></div>';
+        const clients = await api('OGA_GET_CLIENTES', { limite:500 }, { titulo:'Cargando clientes OGA', mensaje:'Consultando directorio de organismos.' });
+        if (!clients.success) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">' + esc(clients.message || 'No se pudo cargar clientes OGA.') + '</td></tr>'; return; }
+        const list = clients.clientes || [];
+        if (!list.length) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">Sin registros OGA.</td></tr>'; return; }
+        byId('ogaBody').innerHTML = list.map(function(item) { return '<tr><td>' + esc(item.oecId) + '</td><td>' + esc(item.razon) + '</td><td>' + esc(item.tipo) + '</td><td>' + esc(item.norma) + '</td><td>' + esc(item.segmento) + '</td><td>' + esc(item.estado) + '</td></tr>'; }).join('');
+      }
+
+      function abrirDashboardOGA(){byId('ogaReportModal').classList.add('show');byId('ogaDashboardFrame').src='https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec';}
+      function cerrarDashboardOGA(){byId('ogaReportModal').classList.remove('show');byId('ogaDashboardFrame').removeAttribute('src');}
+      function pnNumero(v) { return Number(v || 0).toLocaleString('es-GT', {maximumFractionDigits:2}); }
+      function pnKpi(nombre, cantidad) { return '<div class="card kpi"><div class="kpi-label">' + esc(nombre) + '</div><div class="kpi-value">' + esc(pnNumero(cantidad)) + '</div></div>'; }
+      function pnBarras(target, title, entries) {
+        const el = byId(target); if (!el) return;
+        const sorted = entries.filter(x=>Number(x[1])>0).sort((a,b)=> /^\d{4}-\d{2}$/.test(String(a[0])) && /^\d{4}-\d{2}$/.test(String(b[0])) ? String(a[0]).localeCompare(String(b[0])) : Number(b[1])-Number(a[1])).slice(0,14);
+        const max = Math.max(1,...sorted.map(x=>Number(x[1])));
+        el.innerHTML = '<h3>'+esc(title)+'</h3>' + (sorted.length ? sorted.map(([name,n])=>'<div class="pn-bar-row"><span title="'+esc(name)+'">'+esc(name)+'</span><div class="pn-track"><div class="pn-fill" style="width:'+Math.max(1,100*n/max)+'%"></div></div><strong>'+esc(pnNumero(n))+'</strong></div>').join('') : '<p class="empty">No hay datos para este filtro.</p>');
+      }
+      function renderUnitSummary(depts, kpiId, chartId) {
+        const names = ['OGA','CENAME','COGUANOR','CRETEC'];
+        const data=names.map(n=>{const d=depts.find(x=>x.department===n)||{};return [n,d.totalRows==null?null:Number(d.totalRows)];});
+        byId(kpiId).innerHTML=data.map(([n,v])=>v===null?'<div class="card kpi"><div class="kpi-label">'+esc(n)+'</div><div class="kpi-value">N/D</div></div>':pnKpi(n,v)).join('');
+        pnBarras(chartId,'Registros por unidad · disponibles',data.filter(x=>x[1]!==null));
+      }
+      async function cargarResumenVisual() {
+        const r=await api('GET_ADMIN_ALL_INDICATORS',{limit:25},{titulo:'Actualizando gráficas',mensaje:'Consultando unidades.'});
+        if(r.success) renderUnitSummary(r.departments||[],'dashboardUnidades','dashboardBarras');
+      }
+      function pnDate(v){
+        const raw=String(v==null?'':v).trim();
+        const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
+        return m?m[3]+'/'+m[2]+'/'+m[1] : raw;
+      }
+      async function cargarUnidad(dept) {
+        const pref=dept.toLowerCase();
+        const body=byId(pref+'Body');body.innerHTML='<tr><td class="empty">Cargando registros...</td></tr>';
+        const r=await api('GET_INDICATOR_DATA',{department:dept,limit:1500},{titulo:'Consultando '+dept,mensaje:'Leyendo registros de '+dept});
+        if(!r.success){body.innerHTML='<tr><td class="empty">'+esc(r.message||'Error')+'</td></tr>';return;}
+        const d=r.data||r,rows=d.rows||[];
+        const cols=dept==='CRETEC'?['Fecha','Tipo de actividad','Tema / Área','Modalidad','Asistentes','Lugar','Mes','Usuario']:['Mes','Tipo de registro','Cantidad','Catálogo de norma','Código AMSE','Sector / fecha','Usuario'];
+        const mapping=dept==='CRETEC'?row=>[pnDate(row[2]),row[13]||'Conferencia',row[4],row[5],pnNumero(row[7]),row[8],row[1],row[12]]:row=>[row[1],row[2],pnNumero(row[3]),row[4],row[5],row[7],row[13]];
+        const types={};let sum=0;
+        rows.forEach(row=>{
+          const key=String(dept==='CRETEC'?(row[13]||'Sin tipo'):(row[2]||'Sin tipo'));
+          const count=Number(dept==='CRETEC'?row[7]:row[3])||0;
+          types[key]=(types[key]||0)+count;sum+=count;
+        });
+        byId(pref+'Kpis').innerHTML=pnKpi('Registros',d.totalRows||0)+pnKpi(dept==='CRETEC'?'Asistentes registrados':'Cantidad declarada',sum)+pnKpi('Tipos de actividades',Object.keys(types).length);
+        pnBarras(pref+'Chart',dept==='CRETEC'?'Participantes por tipo de actividad':'Cantidades por tipo de registro',Object.entries(types));
+        byId(pref+'Head').innerHTML='<tr>'+cols.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';
+        body.innerHTML=rows.length?rows.slice(0,200).map(row=>'<tr>'+mapping(row).map((v,i)=>'<td'+(i===4?' class="pn-num"':'')+'>'+esc(v??'')+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" class="empty">No hay registros para esta unidad.</td></tr>';
+        const info=byId(pref+'RowsInfo');if(info)info.textContent='Mostrando '+Math.min(rows.length,200)+' de '+Number(d.totalRows||0)+' registros. '+(dept==='CRETEC'?'La fecha de la actividad se visualiza sin conversión de zona horaria.':'Los campos dependen del tipo de registro.');
+      }
+      async function cargarCENAME() {
+        const filters={limit:5000,year:byId('cenameYear').value,month:byId('cenameMonth').value,includeHistory:false};
+        byId('cenameBody').innerHTML='<tr><td colspan="9" class="empty">Cargando indicadores...</td></tr>';
+        const result=await api('CENAME_ESTADO',{filters},{titulo:'Consultando CENAME',mensaje:'Agregando datos por período, entorno y laboratorio.'});
+        if(!result.success){byId('cenameBody').innerHTML='<tr><td colspan="9" class="empty">'+esc(result.message||'Error')+'</td></tr>';return;}
+        const stats=result.stats||{},rows=result.rows||[],summary=result.summary||[];
+        const incomplete=rows.length<Number(stats.totalRegistros||0);
+        const sum=k=>rows.reduce((a,r)=>a+Number(r[k]||0),0);
+        byId('cenameKpis').innerHTML=
+          pnKpi('Registros',stats.totalRegistros)+pnKpi('Instrumentos calibrados',stats.totalCalibraciones)+
+          pnKpi('Certificados registrados',stats.totalCertificados)+pnKpi('Estaciones reportadas',stats.totalEstaciones)+
+          pnKpi('Dispensadores reportados',stats.totalDispensadores)+pnKpi('Huella económica (Q)',stats.totalHuella)+
+          pnKpi('Verificaciones reportadas',stats.totalVerificaciones)+
+          '<div class="card kpi"><div class="kpi-label">Empresas beneficiadas · mangueras · vehículos atendidos</div><div class="kpi-note">Sin campos oficiales identificados. No se equiparan con clientes, estaciones o dispensadores.</div></div>';
+        const meses={}; const labs={};const sectores={};
+        summary.forEach(r=>{let key=String(r.periodo||'');if(!/^\d{4}-\d{2}$/.test(key))return;meses[key]=(meses[key]||0)+Number(r.calibraciones||0);});
+        rows.forEach(r=>{
+          if(String(r.entorno||'')==='INSTRUMENTOS_CALIBRADOS' && Number(r.calibraciones||0)>0){
+            const lab=String(r.subcategoria||'Laboratorio no identificado').trim();
+            labs[lab]=(labs[lab]||0)+Number(r.calibraciones||0);
+          }
+          const sector=String(r.sector||'Sin sector identificado').trim();
+          sectores[sector]=(sectores[sector]||0)+1;
+        });
+        const periods=Object.entries(meses).sort((a,b)=>a[0].localeCompare(b[0]));
+        pnBarras('cenameMensual','Instrumentos calibrados por mes',periods);
+        pnBarras('cenameLaboratorios','Instrumentos calibrados por laboratorio / subcategoría'+(incomplete?' (parcial)':''),Object.entries(labs));
+        pnBarras('cenameSectores','Registros por sector'+(incomplete?' (parcial)':''),Object.entries(sectores));
+        byId('cenameBody').innerHTML=rows.length?rows.slice(0,200).map(r=>'<tr><td>'+esc(r.idReporte||r.idRegistro||'')+'</td><td>'+esc(pnDate(r.fechaOperacion||r.fechaCarga))+'</td><td>'+esc(r.entornoLabel||r.categoria||'')+'</td><td>'+esc(r.subcategoria||'')+'</td><td class="pn-num">'+esc(pnNumero(r.calibraciones))+'</td><td class="pn-num">'+esc(pnNumero(r.certificados))+'</td><td class="pn-num">'+esc(pnNumero(r.estaciones))+'</td><td class="pn-num">'+esc(pnNumero(r.dispensadores))+'</td><td class="pn-num">'+esc(pnNumero(r.huella))+'</td></tr>').join(''):'<tr><td colspan="9" class="empty">Sin registros para el período.</td></tr>';
+        byId('cenameRowsInfo').textContent='Mostrando '+Math.min(rows.length,200)+' registros de '+Number(stats.totalRegistros||0)+'. Las cantidades provienen de CENAME_REGISTROS y CENAME_RESUMEN_MENSUAL.';
+      }
+
+      async function cargarCorreosDepto() { const department = byId('mailDept').value; if (!department) return; const result = await api('GET_DEPARTMENT_EMAILS', { department:department }, { titulo:'Cargando correos', mensaje:'Consultando destinatarios.' }); if (result.success) byId('mailEmails').value = (result.emails || []).join(', '); }
+      async function guardarCorreosDepto() { const department = byId('mailDept').value; const emails = byId('mailEmails').value; if (!department) { toast('Seleccione un departamento.', 'warning'); return; } const result = await api('SAVE_DEPARTMENT_EMAILS', { department:department, emails:emails }, { titulo:'Guardando correos', mensaje:'Actualizando configuración.' }); if (result.success) toast('Correos guardados correctamente.', 'success'); }
+      async function enviarRecordatorio() { const payload = { department:byId('sendDept').value, emails:byId('sendEmails').value, subject:byId('sendSubject').value, message:byId('sendMessage').value, type:'monthly' }; if (!payload.emails || !payload.subject || !payload.message) { toast('Complete destinatarios, asunto y mensaje.', 'warning'); return; } const result = await api('SEND_REMINDER_EMAIL', payload, { titulo:'Enviando recordatorio', mensaje:'Enviando correo institucional.' }); if (result.success) toast(result.message || 'Recordatorio enviado.', 'success'); }
+      async function cargarLogs() { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">Cargando logs...</td></tr>'; const result = await api('GET_LOGS', {}, { titulo:'Cargando bitácora', mensaje:'Consultando últimas acciones.' }); if (!result.success) { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">' + esc(result.message || 'No se pudo cargar logs.') + '</td></tr>'; return; } logs = result.logs || []; if (!logs.length) { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">No hay logs.</td></tr>'; return; } byId('logsBody').innerHTML = logs.map(function(log) { return '<tr><td>' + esc(log.timestamp) + '</td><td>' + esc(log.user) + '</td><td>' + esc(log.department) + '</td><td>' + esc(log.action) + '</td><td>' + esc(log.details) + '</td></tr>'; }).join(''); }
+
+      async function cerrarSesionSeguro() {
+        try {
+          await api('LOGOUT', {}, { titulo:'Cerrando sesión', mensaje:'Finalizando sesión local.', bloqueo:false });
+        } catch(e) {}
+
+        irLogin();
+      }
+
+      function setupEvents() { byId('cenameYear').value=new Date().getFullYear(); for(let i=1;i<=12;i++){const o=document.createElement('option');o.value=String(i);o.textContent=new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,i-1,1));byId('cenameMonth').appendChild(o);} byId('mobileBtn').addEventListener('click', function() { byId('sidebar').classList.toggle('open'); }); document.querySelectorAll('.nav-btn[data-section]').forEach(function(btn) { btn.addEventListener('click', function() { abrirSeccion(btn.dataset.section); }); }); byId('searchUsers').addEventListener('input', renderUsuarios); byId('filterDept').addEventListener('change', renderUsuarios); byId('userForm').addEventListener('submit', guardarUsuario); }
+      async function init() { setupEvents(); const ok = await validarSesionInicial(); if (!ok) return; await cargarDashboard(); }
+
+      window.abrirSeccion = abrirSeccion;
+      window.abrirModalUsuario = abrirModalUsuario;
+      window.cerrarModalUsuario = cerrarModalUsuario;
+      window.editarUsuario = editarUsuario;
+      window.toggleEstado = toggleEstado;
+      window.resetPass = resetPass;
+      window.enviarCredenciales = enviarCredenciales;
+      window.cargarUsuarios = cargarUsuarios;
+      window.cargarIndicadores = cargarIndicadores;
+      window.cargarOGA = cargarOGA;
+      window.cargarCENAME = cargarCENAME;
+      window.abrirDashboardOGA=abrirDashboardOGA;
+      window.cerrarDashboardOGA=cerrarDashboardOGA;
+      window.cargarUnidad=cargarUnidad;
+      window.cargarResumenVisual=cargarResumenVisual;
+      window.cargarCorreosDepto = cargarCorreosDepto;
+      window.guardarCorreosDepto = guardarCorreosDepto;
+      window.enviarRecordatorio = enviarRecordatorio;
+      window.cargarLogs = cargarLogs;
+      window.validarSesionInicial = validarSesionInicial;
+      window.probarConexion = probarConexion;
+      window.cerrarSesionSeguro = cerrarSesionSeguro;
+      window.cerrarBloqueoError = cerrarBloqueoError;
+      window.irLogin = irLogin;
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>

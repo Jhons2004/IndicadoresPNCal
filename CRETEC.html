@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRETEC - Comité Nacional de Reglamentación Técnica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-tab.active { background-color: #5D5CDE; color: white; }
+        .nav-tab:not(.active) { background-color: #F3F4F6; color: #374151; }
+        .nav-tab:not(.active):hover { background-color: #E5E7EB; }
+        /* Animación suave */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* Estilos para inputs calculados */
+        input[readonly] { background-color: #F3F4F6; cursor: not-allowed; border-color: #D1D5DB; color: #1F2937; font-weight: bold; }
+        /* Estilos para la tabla */
+        .data-table th { background-color: #F8FAFC; position: sticky; top: 0; }
+        .data-table tr:hover { background-color: #F7F9FC; }
+        .data-table { border-collapse: separate; border-spacing: 0; min-width: 720px; }
+        .data-table td { border-bottom: 1px solid #e5eaf3; overflow-wrap:anywhere; }
+        .data-table tbody tr:nth-child(even) { background: #f8fbff; }
+        button:focus-visible,input:focus-visible,select:focus-visible {outline:3px solid #93c5fd;outline-offset:2px;}
+        .status-active { color: #10B981; }
+        .status-inactive { color: #EF4444; }
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="text-center">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
+            <p class="text-gray-700 font-medium" id="loading-text">Cargando...</p>
+        </div>
+    </div>
+    
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-gavel text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">CRETEC</h1>
+                        <p class="text-blue-100 text-sm">Comité Nacional de Reglamentación Técnica</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-right text-white">
+                        <p class="text-sm text-blue-200">Usuario activo</p>
+                        <p class="font-semibold text-sm" id="user-name">Usuario CRETEC</p>
+                    </div>
+                    <button type="button" onclick="logout()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Salir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button type="button" onclick="switchTab('dashboard')" class="nav-tab active px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+                    <i class="fas fa-home mr-2"></i>Inicio
+                </button>
+                <button type="button" onclick="switchTab('conferencias')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Conferencias RT
+                </button>
+                <button type="button" onclick="switchTab('eventos')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+                    <i class="fas fa-bullhorn mr-2"></i>Eventos Divulgación
+                </button>
+                <button type="button" id="dashboard-tab" onclick="switchTab('datos')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+                    <i class="fas fa-chart-bar mr-2"></i>Ver Datos
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Pestaña Inicio -->
+        <div id="dashboard" class="tab-content active">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-6 shadow-sm border">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-chalkboard-teacher text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Conferencias RT</p>
+                            <div id="stat-conferencias" class="text-2xl font-bold text-gray-900 flex items-center h-8">
+                                <i class="fas fa-spinner fa-spin text-lg text-blue-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 shadow-sm border">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-bullhorn text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Eventos Divulgación</p>
+                            <div id="stat-eventos" class="text-2xl font-bold text-gray-900 flex items-center h-8">
+                                <i class="fas fa-spinner fa-spin text-lg text-indigo-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-6 shadow-sm border">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-users text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Personas Capacitadas</p>
+                            <div id="stat-personas" class="text-2xl font-bold text-gray-900 flex items-center h-8">
+                                <i class="fas fa-spinner fa-spin text-lg text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cog mr-2 text-gray-600"></i>Configuración del Reporte
+                </h3>
+                <form id="general-form">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mes del Reporte</label>
+                        <select name="mes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required>
+                            <option value="">Seleccione el mes</option>
+                            <option value="Enero">Enero</option>
+                            <option value="Febrero">Febrero</option>
+                            <option value="Marzo">Marzo</option>
+                            <option value="Abril">Abril</option>
+                            <option value="Mayo">Mayo</option>
+                            <option value="Junio">Junio</option>
+                            <option value="Julio">Julio</option>
+                            <option value="Agosto">Agosto</option>
+                            <option value="Septiembre">Septiembre</option>
+                            <option value="Octubre">Octubre</option>
+                            <option value="Noviembre">Noviembre</option>
+                            <option value="Diciembre">Diciembre</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pestaña Conferencias -->
+        <div id="conferencias" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm border">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
+                    <h3 class="text-xl font-bold text-white">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Conferencias de Reglamentos Técnicos
+                    </h3>
+                </div>
+                
+                <div class="p-6">
+                    <form id="conferencias-form" class="space-y-6">
+                        <!-- Hidden field for edit mode -->
+                        <input type="hidden" id="conferencia-edit-index" name="rowIndex" value="">
+                        <input type="hidden" id="conferencia-absolute-row-index" name="absoluteRowIndex" value="">
+                        <input type="hidden" id="conferencia-edit-mode" name="editMode" value="false">
+                        
+                        <div id="conferencias-container" class="space-y-4">
+                            <div class="conferencia-item border border-blue-200 rounded-lg p-4 bg-blue-50 fade-in">
+                                <h4 class="text-lg font-semibold text-blue-800 mb-4">Conferencia #1</h4>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Conferencia</label>
+                                        <input type="date" name="fecha_conferencia[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tema (Reglamentos Técnicos)</label>
+                                        <input type="text" name="tema_conferencia[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Ej: Reglamento Técnico de...">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad</label>
+                                        <select name="modalidad_conferencia[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                            <option value="Presencial">Presencial</option>
+                                            <option value="Virtual">Virtual</option>
+                                            <option value="Mixta">Mixta</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-span-1 md:col-span-3 bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
+                                        <p class="text-sm font-bold text-gray-700 mb-2 border-b pb-1">Desglose de Asistentes</p>
+                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 grid-calc-container">
+                                            <div>
+                                                <label class="text-xs text-gray-500">Sector Público</label>
+                                                <input type="number" name="asistentes_publico[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500">Sector Privado</label>
+                                                <input type="number" name="asistentes_privado[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500">Academia</label>
+                                                <input type="number" name="asistentes_academia[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-blue-600 font-bold">Total (Automático)</label>
+                                                <input type="number" name="total_asistentes_conf[]" class="w-full bg-gray-100 border border-gray-300 rounded p-2 font-bold text-blue-800 cursor-not-allowed" readonly value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Lugar</label>
+                                        <select name="lugar_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                            <option value="Guatemala">Guatemala</option>
+                                            <option value="Quetzaltenango">Quetzaltenango</option>
+                                            <option value="Virtual">Virtual</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Duración</label>
+                                        <select name="duracion_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                            <option value="2 horas">2 horas</option>
+                                            <option value="4 horas">4 horas</option>
+                                            <option value="8 horas">8 horas</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                                    <textarea name="observaciones_conferencia[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" rows="2"></textarea>
+                                </div>
+                                
+                                <div class="flex justify-end">
+                                    <button type="button" onclick="removeConferencia(this)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i class="fas fa-trash mr-1"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4">
+                            <button type="button" onclick="addConferencia()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Agregar Conferencia
+                            </button>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t mt-4">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center">
+                                <i class="fas fa-save mr-2"></i> <span id="conferencia-submit-text">Guardar Conferencias</span>
+                            </button>
+                            <button type="button" id="cancel-conferencia-edit" onclick="cancelEdit('conferencia')" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center ml-3 hidden">
+                                <i class="fas fa-times mr-2"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Eventos -->
+        <div id="eventos" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm border">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-xl">
+                    <h3 class="text-xl font-bold text-white">
+                        <i class="fas fa-bullhorn mr-2"></i>Eventos de Divulgación
+                    </h3>
+                </div>
+                
+                <div class="p-6">
+                    <form id="eventos-form" class="space-y-6">
+                        <!-- Hidden field for edit mode -->
+                        <input type="hidden" id="evento-edit-index" name="rowIndex" value="">
+                        <input type="hidden" id="evento-absolute-row-index" name="absoluteRowIndex" value="">
+                        <input type="hidden" id="evento-edit-mode" name="editMode" value="false">
+                        
+                        <div id="eventos-container" class="space-y-4">
+                            <div class="evento-item border border-indigo-200 rounded-lg p-4 bg-indigo-50 fade-in">
+                                <h4 class="text-lg font-semibold text-indigo-800 mb-4">Evento BPR #1</h4>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Evento</label>
+                                        <input type="date" name="fecha_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Método (Buenas Prácticas Reg.)</label>
+                                        <select name="metodo_divulgacion[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                            <option value="Conferencia Magistral">Conferencia Magistral</option>
+                                            <option value="Taller Práctico">Taller Práctico</option>
+                                            <option value="Seminario">Seminario Técnico</option>
+                                            <option value="Webinar">Webinar</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-span-1 md:col-span-3 bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
+                                        <p class="text-sm font-bold text-gray-700 mb-2 border-b pb-1">Personas Capacitadas por Sector</p>
+                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 grid-calc-container">
+                                            <div>
+                                                <label class="text-xs text-gray-500">Sector Público</label>
+                                                <input type="number" name="capacitados_publico[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500">Sector Privado</label>
+                                                <input type="number" name="capacitados_privado[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500">Academia</label>
+                                                <input type="number" name="capacitados_academia[]" oninput="calcTotal(this)" class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-indigo-200" min="0" value="0">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-indigo-600 font-bold">Total (Automático)</label>
+                                                <input type="number" name="personas_capacitadas[]" class="w-full bg-gray-100 border border-gray-300 rounded p-2 font-bold text-indigo-800 cursor-not-allowed" readonly value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Área del Evento</label>
+                                        <input type="text" name="area_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Organización/Empresa</label>
+                                        <input type="text" name="organizacion_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                                    <textarea name="observaciones_evento[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" rows="2"></textarea>
+                                </div>
+                                
+                                <div class="flex justify-end">
+                                    <button type="button" onclick="removeEvento(this)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i class="fas fa-trash mr-1"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4">
+                            <button type="button" onclick="addEvento()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Agregar Evento
+                            </button>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Justificación de Cambios</label>
+                            <textarea name="justificacion_cambios" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" rows="2"></textarea>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t mt-4">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center">
+                                <i class="fas fa-save mr-2"></i> <span id="evento-submit-text">Guardar Eventos</span>
+                            </button>
+                            <button type="button" id="cancel-evento-edit" onclick="cancelEdit('evento')" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center ml-3 hidden">
+                                <i class="fas fa-times mr-2"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Ver Datos -->
+        <div id="datos" class="tab-content">
+            <div class="bg-white rounded-xl shadow-sm border">
+                <div class="px-6 py-4 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-database mr-2"></i>Datos Almacenados - CRETEC
+                    </h3>
+                    <div class="flex space-x-2">
+                        <button onclick="loadDashboardData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i> Actualizar
+                        </button>
+                        <select id="filter-mes" onchange="filterByMonth()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="">Todos los meses</option>
+                            <option value="Enero">Enero</option>
+                            <option value="Febrero">Febrero</option>
+                            <option value="Marzo">Marzo</option>
+                            <option value="Abril">Abril</option>
+                            <option value="Mayo">Mayo</option>
+                            <option value="Junio">Junio</option>
+                            <option value="Julio">Julio</option>
+                            <option value="Agosto">Agosto</option>
+                            <option value="Septiembre">Septiembre</option>
+                            <option value="Octubre">Octubre</option>
+                            <option value="Noviembre">Noviembre</option>
+                            <option value="Diciembre">Diciembre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="dashboard-content">
+                        <p class="text-gray-600 text-center py-4">Cargando datos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+    <script>
+        // ====================================
+        // CONFIGURACIÓN (APPS SCRIPT)
+        // ====================================
+        
+        const CRETEC_CONFIG = {
+            APP_URL: <?!= typeof appUrl !== 'undefined' ? JSON.stringify(appUrl) : '""' ?>,
+            PAGE: <?!= typeof page !== 'undefined' ? JSON.stringify(page) : '"CRETEC"' ?>,
+            IS_JEFE: false
+        };
+
+        let counters = { conferencia: 1, evento: 1 };
+        let currentData = null; // Para almacenar datos actuales
+        let CURRENT_USER = {};
+        let TEMPLATE_CONFERENCIA_HTML = '';
+        let TEMPLATE_EVENTO_HTML = '';
+
+        function readStoredAuth() {
+            let raw = '';
+            try { raw = sessionStorage.getItem('dsnc_auth') || ''; } catch (e) {}
+            if (!raw) {
+                try { raw = localStorage.getItem('dsnc_auth') || ''; } catch (e) {}
+            }
+
+            if (!raw) return null;
+
+            try {
+                const auth = JSON.parse(raw);
+                if (!auth || !auth.username || !auth.password) return null;
+                return auth;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getAuthPayload() {
+            const auth = readStoredAuth();
+            if (!auth) return null;
+
+            return {
+                username: String(auth.username || '').trim(),
+                password: String(auth.password || '').trim()
+            };
+        }
+
+        function getStoredUser() {
+            const auth = readStoredAuth();
+            if (!auth) return {};
+            return auth.user || {};
+        }
+
+        function redirectToLoginSafe() {
+            try {
+                sessionStorage.removeItem('dsnc_auth');
+                sessionStorage.removeItem('dsnc_active');
+                localStorage.removeItem('dsnc_auth');
+                localStorage.removeItem('dsnc_user');
+            } catch (e) {}
+
+            const url = (CRETEC_CONFIG.APP_URL || '') + '?page=login';
+            window.location.href = url;
+        }
+
+        function initUserFromStorage() {
+            const auth = readStoredAuth();
+
+            if (!auth) {
+                console.warn('No existe dsnc_auth en storage para CRETEC. Se regresa al login.');
+                redirectToLoginSafe();
+                return false;
+            }
+
+            CURRENT_USER = auth.user || {};
+            CRETEC_CONFIG.IS_JEFE =
+                CURRENT_USER.role === 'Usuario' ||
+                CURRENT_USER.role === 'Jefe' ||
+                CURRENT_USER.rol === 'Usuario' ||
+                CURRENT_USER.rol === 'Jefe';
+
+            const userNameElement = document.getElementById('user-name');
+            if (userNameElement) {
+                userNameElement.textContent =
+                    CURRENT_USER.name ||
+                    CURRENT_USER.nombre ||
+                    CURRENT_USER.username ||
+                    auth.username ||
+                    'Usuario CRETEC';
+            }
+
+            return true;
+        }
+
+        // ============================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================
+
+        function showLoading(text = 'Cargando...') {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        function calcTotal(inputElement) {
+            const container = inputElement ? inputElement.closest('.grid-calc-container') : null;
+            if (!container) return;
+
+            const inputs = container.querySelectorAll('input:not([readonly])');
+            let sum = 0;
+            inputs.forEach(input => {
+                sum += parseInt(input.value) || 0;
+            });
+            const totalInput = container.querySelector('input[readonly]');
+            if(totalInput) totalInput.value = sum;
+        }
+
+        function switchTab(tabName) {
+            const targetTab = document.getElementById(tabName);
+            const targetButton = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+
+            if (!targetTab || !targetButton) {
+                console.error('No se encontró la pestaña solicitada:', tabName);
+                showNotification('No se pudo abrir la sección seleccionada.', 'error');
+                return;
+            }
+
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            targetTab.classList.add('active');
+
+            document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+            targetButton.classList.add('active');
+            
+            if (tabName === 'datos') {
+                loadDashboardData();
+            }
+        }
+
+        // ============================================
+        // GESTIÓN DE FORMULARIOS (CONFERENCIAS Y EVENTOS)
+        // ============================================
+
+        /**
+         * Construye un elemento nuevo desde una cadena HTML.
+         * No usa cloneNode(), por lo que la plantilla no depende de un nodo vivo
+         * que pueda desaparecer después de limpiar el contenedor.
+         */
+        function createNodeFromHTML(html, selector) {
+            if (typeof html !== 'string' || !html.trim()) return null;
+
+            const template = document.createElement('template');
+            template.innerHTML = html.trim();
+
+            const node = template.content.querySelector(selector);
+            if (!node) {
+                console.error(`No se encontró ${selector} dentro de la plantilla HTML.`);
+                return null;
+            }
+
+            // El nodo se extrae del DocumentFragment y queda listo para insertarse.
+            return node;
+        }
+
+        function captureFormTemplates() {
+            const conferenciaInicial = document.querySelector('#conferencias-container .conferencia-item');
+            const eventoInicial = document.querySelector('#eventos-container .evento-item');
+
+            if (conferenciaInicial) {
+                TEMPLATE_CONFERENCIA_HTML = conferenciaInicial.outerHTML;
+            }
+
+            if (eventoInicial) {
+                TEMPLATE_EVENTO_HTML = eventoInicial.outerHTML;
+            }
+
+            const okConferencia = Boolean(TEMPLATE_CONFERENCIA_HTML);
+            const okEvento = Boolean(TEMPLATE_EVENTO_HTML);
+
+            if (!okConferencia || !okEvento) {
+                console.error('No fue posible capturar una o más plantillas iniciales.', {
+                    conferencia: okConferencia,
+                    evento: okEvento
+                });
+            }
+
+            return okConferencia && okEvento;
+        }
+
+        function createConferenciaItem() {
+            // Recuperación adicional por si la plantilla todavía no se había capturado.
+            if (!TEMPLATE_CONFERENCIA_HTML) {
+                const current = document.querySelector('#conferencias-container .conferencia-item');
+                if (current) TEMPLATE_CONFERENCIA_HTML = current.outerHTML;
+            }
+
+            return createNodeFromHTML(TEMPLATE_CONFERENCIA_HTML, '.conferencia-item');
+        }
+
+        function createEventoItem() {
+            // Recuperación adicional por si la plantilla todavía no se había capturado.
+            if (!TEMPLATE_EVENTO_HTML) {
+                const current = document.querySelector('#eventos-container .evento-item');
+                if (current) TEMPLATE_EVENTO_HTML = current.outerHTML;
+            }
+
+            return createNodeFromHTML(TEMPLATE_EVENTO_HTML, '.evento-item');
+        }
+
+        function setItemTitle(item, title) {
+            const heading = item ? item.querySelector('h4') : null;
+            if (heading) heading.textContent = title;
+        }
+
+        function resetItemFields(item) {
+            if (!item) return;
+
+            item.querySelectorAll('input, select, textarea').forEach(field => {
+                if (field.type === 'number') {
+                    field.value = '0';
+                } else if (field.type === 'date') {
+                    field.value = '';
+                } else if (field.tagName === 'SELECT') {
+                    field.selectedIndex = 0;
+                } else {
+                    field.value = '';
+                }
+            });
+        }
+
+        function addConferencia() {
+            const container = document.getElementById('conferencias-container');
+            const item = createConferenciaItem();
+
+            if (!container || !item) {
+                showNotification('Error interno: no existe la plantilla de conferencia. Recargue la página.', 'error');
+                return;
+            }
+
+            counters.conferencia++;
+            setItemTitle(item, `Conferencia #${counters.conferencia}`);
+            resetItemFields(item);
+            container.appendChild(item);
+        }
+
+        function resetConferenciaForm(showMessage = false) {
+            const container = document.getElementById('conferencias-container');
+            const form = document.getElementById('conferencias-form');
+
+            if (form) form.reset();
+
+            const editIndex = document.getElementById('conferencia-edit-index');
+            const absoluteRow = document.getElementById('conferencia-absolute-row-index');
+            const editMode = document.getElementById('conferencia-edit-mode');
+            const submitText = document.getElementById('conferencia-submit-text');
+            const cancelButton = document.getElementById('cancel-conferencia-edit');
+
+            if (editIndex) editIndex.value = '';
+            if (absoluteRow) absoluteRow.value = '';
+            if (editMode) editMode.value = 'false';
+            if (submitText) submitText.textContent = 'Guardar Conferencias';
+            if (cancelButton) cancelButton.classList.add('hidden');
+
+            if (container) {
+                const item = createConferenciaItem();
+                if (!item) {
+                    showNotification('No se pudo reconstruir el formulario de conferencia.', 'error');
+                    return;
+                }
+
+                container.replaceChildren();
+                counters.conferencia = 1;
+                setItemTitle(item, 'Conferencia #1');
+                resetItemFields(item);
+                container.appendChild(item);
+            }
+
+            if (showMessage) showNotification('Modo edición cancelado', 'info');
+        }
+
+        function removeConferencia(button) {
+            const currentItem = button ? button.closest('.conferencia-item') : null;
+            if (!currentItem) {
+                showNotification('No se pudo identificar la conferencia seleccionada.', 'error');
+                return;
+            }
+
+            const items = document.querySelectorAll('#conferencias-container .conferencia-item');
+            if (items.length > 1) {
+                currentItem.remove();
+                renumberItems('#conferencias-container .conferencia-item', 'Conferencia');
+            } else {
+                resetItemFields(currentItem);
+            }
+        }
+
+        function addEvento() {
+            const container = document.getElementById('eventos-container');
+            const item = createEventoItem();
+
+            if (!container || !item) {
+                showNotification('Error interno: no existe la plantilla de evento. Recargue la página.', 'error');
+                return;
+            }
+
+            counters.evento++;
+            setItemTitle(item, `Evento BPR #${counters.evento}`);
+            resetItemFields(item);
+            container.appendChild(item);
+        }
+
+        function resetEventoForm(showMessage = false) {
+            const container = document.getElementById('eventos-container');
+            const form = document.getElementById('eventos-form');
+
+            if (form) form.reset();
+
+            const editIndex = document.getElementById('evento-edit-index');
+            const absoluteRow = document.getElementById('evento-absolute-row-index');
+            const editMode = document.getElementById('evento-edit-mode');
+            const submitText = document.getElementById('evento-submit-text');
+            const cancelButton = document.getElementById('cancel-evento-edit');
+
+            if (editIndex) editIndex.value = '';
+            if (absoluteRow) absoluteRow.value = '';
+            if (editMode) editMode.value = 'false';
+            if (submitText) submitText.textContent = 'Guardar Eventos';
+            if (cancelButton) cancelButton.classList.add('hidden');
+
+            const justificacion = document.querySelector('textarea[name="justificacion_cambios"]');
+            if (justificacion) justificacion.value = '';
+
+            if (container) {
+                const item = createEventoItem();
+                if (!item) {
+                    showNotification('No se pudo reconstruir el formulario de evento.', 'error');
+                    return;
+                }
+
+                container.replaceChildren();
+                counters.evento = 1;
+                setItemTitle(item, 'Evento BPR #1');
+                resetItemFields(item);
+                container.appendChild(item);
+            }
+
+            if (showMessage) showNotification('Modo edición cancelado', 'info');
+        }
+
+        function removeEvento(button) {
+            const currentItem = button ? button.closest('.evento-item') : null;
+            if (!currentItem) {
+                showNotification('No se pudo identificar el evento seleccionado.', 'error');
+                return;
+            }
+
+            const items = document.querySelectorAll('#eventos-container .evento-item');
+            if (items.length > 1) {
+                currentItem.remove();
+                renumberItems('#eventos-container .evento-item', 'Evento BPR');
+            } else {
+                resetItemFields(currentItem);
+            }
+        }
+
+        function renumberItems(selector, prefix) {
+            const items = document.querySelectorAll(selector);
+            items.forEach((item, index) => setItemTitle(item, `${prefix} #${index + 1}`));
+
+            if (selector.includes('conferencia')) {
+                counters.conferencia = items.length;
+            } else if (selector.includes('evento')) {
+                counters.evento = items.length;
+            }
+        }
+
+        // ============================================
+        // COMUNICACIÓN CON BACKEND (APPS SCRIPT)
+        // ============================================
+
+        function callAPI(action, data = {}) {
+            const auth = getAuthPayload();
+
+            if (!auth && action !== 'TEST_CONNECTION') {
+                redirectToLoginSafe();
+                return Promise.resolve({
+                    success: false,
+                    redirect: true,
+                    message: 'No hay sesión local. Ingrese nuevamente.'
+                });
+            }
+
+            return new Promise((resolve) => {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(response) {
+                            response = response || { success: false, message: 'Respuesta vacía del servidor' };
+
+                            // IMPORTANTE:
+                            // CRETEC no debe regresar solo al login cuando una carga de datos responde redirect:true.
+                            // Eso causaba el rebote: entraba bien, loadStats() pedía GET_INDICATOR_DATA,
+                            // el backend respondía redirect:true y el HTML destruía la sesión local.
+                            // Ahora solo devolvemos la respuesta para que la vista muestre el error sin sacar al usuario.
+                            if (response.redirect) {
+                                console.warn('Backend solicitó redirect en acción ' + action + ':', response);
+                                resolve(response);
+                                return;
+                            }
+
+                            resolve(response);
+                        })
+                        .withFailureHandler(function(error) {
+                            console.error('Error Apps Script:', error);
+                            resolve({
+                                success: false,
+                                message: error && error.message ? error.message : String(error || 'Error de conexión')
+                            });
+                        })
+                        .dsncApi(action, data || {}, auth || {});
+                } catch (error) {
+                    console.error('Error callAPI:', error);
+                    resolve({
+                        success: false,
+                        message: error && error.message ? error.message : String(error || 'Error de conexión')
+                    });
+                }
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-100 text-green-800' : 
+                          type === 'error' ? 'bg-red-100 text-red-800' : 
+                          type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-blue-100 text-blue-800';
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                       type === 'error' ? 'fa-exclamation-circle' : 
+                       type === 'warning' ? 'fa-exclamation-triangle' : 
+                       'fa-info-circle';
+            
+            notification.className = `${bgColor} px-4 py-3 rounded-lg shadow-lg max-w-sm fixed top-4 right-4 z-50 transform transition-all duration-500 ease-in-out flex items-center`;
+            notification.innerHTML = `<i class="fas ${icon} mr-2"></i><span class="font-medium">${message}</span>`;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 500);
+            }, 4000);
+        }
+
+        // ============================================
+        // LÓGICA DE SUBMIT (GUARDAR/ACTUALIZAR)
+        // ============================================
+
+        async function submitForm(formId, sectionName) {
+            const form = document.getElementById(formId);
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            
+            const generalData = new FormData(document.getElementById('general-form'));
+            if (!generalData.get('mes')) {
+                showNotification('Por favor, seleccione el mes del reporte', 'error');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const data = { department: 'CRETEC', section: sectionName };
+            for (let [key, value] of generalData.entries()) {
+                data[key] = value;
+            }
+            
+            // Obtener índice de edición si existe
+            const editIndexInput = form.querySelector('input[name="rowIndex"]');
+            const absoluteRowInput = form.querySelector('input[name="absoluteRowIndex"]');
+            if (editIndexInput && editIndexInput.value !== '') {
+                data.rowIndex = editIndexInput.value;
+            }
+            if (absoluteRowInput && absoluteRowInput.value !== '') {
+                data.absoluteRowIndex = absoluteRowInput.value;
+            }
+            const isEditing = !!(data.absoluteRowIndex || data.rowIndex);
+            
+            // Lógica Específica Conferencias
+            if (formId === 'conferencias-form') {
+                const conferencias = [];
+                document.querySelectorAll('.conferencia-item').forEach(item => {
+                    const pub = item.querySelector('input[name="asistentes_publico[]"]').value || 0;
+                    const priv = item.querySelector('input[name="asistentes_privado[]"]').value || 0;
+                    const aca = item.querySelector('input[name="asistentes_academia[]"]').value || 0;
+                    const sectorResumen = `Pub:${pub}, Priv:${priv}, Aca:${aca}`;
+
+                    const conferencia = {
+                        fecha: item.querySelector('input[name="fecha_conferencia[]"]').value || '',
+                        conferencias_rt: 1, 
+                        sector: sectorResumen, 
+                        asistentes: item.querySelector('input[name="total_asistentes_conf[]"]').value || 0,
+                        tema: item.querySelector('input[name="tema_conferencia[]"]').value || '',
+                        modalidad: item.querySelector('select[name="modalidad_conferencia[]"]').value || '',
+                        lugar: item.querySelector('select[name="lugar_evento[]"]').value || '',
+                        duracion: item.querySelector('select[name="duracion_evento[]"]').value || '',
+                        observaciones: item.querySelector('textarea[name="observaciones_conferencia[]"]').value || ''
+                    };
+                    if (conferencia.tema || conferencia.asistentes > 0) {
+                        conferencias.push(conferencia);
+                    }
+                });
+                data.conferencias = JSON.stringify(conferencias);
+            
+            // Lógica Específica Eventos
+            } else if (formId === 'eventos-form') {
+                const eventos = [];
+                document.querySelectorAll('.evento-item').forEach(item => {
+                    const pub = item.querySelector('input[name="capacitados_publico[]"]').value || 0;
+                    const priv = item.querySelector('input[name="capacitados_privado[]"]').value || 0;
+                    const aca = item.querySelector('input[name="capacitados_academia[]"]').value || 0;
+                    const sectorResumen = `Pub:${pub}, Priv:${priv}, Aca:${aca}`;
+
+                    const evento = {
+                        fecha: item.querySelector('input[name="fecha_evento[]"]').value || '',
+                        metodo: item.querySelector('select[name="metodo_divulgacion[]"]').value || '',
+                        personas: item.querySelector('input[name="personas_capacitadas[]"]').value || 0,
+                        sector: sectorResumen, 
+                        area: item.querySelector('input[name="area_evento[]"]').value || '',
+                        organizacion: item.querySelector('input[name="organizacion_evento[]"]').value || '',
+                        observaciones: item.querySelector('textarea[name="observaciones_evento[]"]').value || ''
+                    };
+                    if (evento.metodo || evento.personas > 0) {
+                        eventos.push(evento);
+                    }
+                });
+                data.eventos = JSON.stringify(eventos);
+                data.justificacion_cambios = form.querySelector('textarea[name="justificacion_cambios"]').value || '';
+            }
+            
+            // Estado de carga
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Guardando...';
+            button.classList.add('opacity-75', 'cursor-wait');
+            
+            try {
+                showLoading(isEditing ? 'Actualizando registro...' : 'Guardando datos...');
+                const result = await callAPI('SAVE_INDICATOR_DATA', data);
+                
+                if (result && result.success) {
+                    const message = isEditing ? 'Registro actualizado correctamente' : `${sectionName} guardado correctamente`;
+                    showNotification(message, 'success');
+                    loadStats(); 
+                    
+                    // Limpiar formularios después de guardar sin perder la plantilla base
+                    if (formId === 'conferencias-form') {
+                        resetConferenciaForm(false);
+                    } else {
+                        resetEventoForm(false);
+                    }
+                    
+                    // Recargar datos si estamos en modo edición
+                    if (isEditing) {
+                        loadDashboardData();
+                        switchTab('datos');
+                    }
+                } else {
+                    showNotification(`Error: ${result?.message || 'No se pudo guardar'}`, 'error');
+                }
+            } catch (err) {
+                showNotification('Error de conexión al guardar: ' + err.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+                button.classList.remove('opacity-75', 'cursor-wait');
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // VISUALIZACIÓN DE DATOS (CRUD COMPLETO)
+        // ============================================
+
+        async function loadDashboardData(month = '') {
+            showLoading('Cargando registros...');
+            const content = document.getElementById('dashboard-content');
+            
+            try {
+                const params = { department: 'CRETEC', limit: 100 };
+                if (month) params.month = month;
+                
+                const result = await callAPI('GET_INDICATOR_DATA', params);
+                if (result && result.success && result.data) {
+                    currentData = result.data;
+                    displayDashboardTable(result.data);
+                } else {
+                    content.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="fas fa-exclamation-triangle text-4xl ${result && result.redirect ? 'text-yellow-300' : 'text-gray-300'} mb-4"></i>
+                            <p class="${result && result.redirect ? 'text-yellow-700' : 'text-gray-500'}">${result && result.message ? result.message : 'No hay datos registrados aún'}</p>
+                            <button onclick="loadDashboardData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                Reintentar
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-300 mb-4"></i>
+                        <p class="text-red-500">Error al cargar datos: ${error.message}</p>
+                        <button onclick="loadDashboardData()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            Reintentar
+                        </button>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function displayDashboardTable(data) {
+            const content = document.getElementById('dashboard-content');
+            if (!data.rows || data.rows.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No hay datos registrados aún</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Crear tabla con datos
+            let tableHTML = `
+                <div class="mb-4 text-sm text-gray-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Mostrando ${data.rows.length} registros
+                </div>
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200 data-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tema / Área</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modalidad / Método</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lugar</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mes</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+            `;
+            
+            // Mostrar los últimos registros primero (más recientes)
+            const reversedRows = [...data.rows].reverse();
+            
+            reversedRows.forEach((row, displayIndex) => {
+                const originalIndex = data.rows.length - 1 - displayIndex;
+                const absoluteRowIndex = data.rowIndexes && data.rowIndexes[originalIndex] ? data.rowIndexes[originalIndex] : (originalIndex + 2);
+                const tipo = row[13] || 'Conferencia'; // Columna Tipo
+                const fecha = row[2] ? formatDateForDisplay(row[2]) : '-';
+                const tema = row[4] || '-';
+                const modalidad = row[5] || '-';
+                const personas = row[7] || 0;
+                const lugar = row[8] || '-';
+                const mes = row[1] || '-';
+                const usuario = row[12] || '-';
+                
+                tableHTML += `
+                    <tr class="hover:bg-gray-50 transition-colors" data-original-index="${originalIndex}" data-absolute-row="${absoluteRowIndex}">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <button onclick="editRecord(${originalIndex}, ${absoluteRowIndex})" 
+                                        class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded transition-colors" 
+                                        title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteRecord(${originalIndex}, ${absoluteRowIndex})" 
+                                        class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded transition-colors" 
+                                        title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${fecha}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="px-2 py-1 text-xs rounded-full ${tipo === 'Conferencia' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+                                ${tipo}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title="${tema}">${tema}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">${modalidad}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">${personas}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">${lugar}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">${mes}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500 truncate max-w-xs" title="${usuario}">${usuario}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            content.innerHTML = tableHTML;
+        }
+
+        function formatDateForDisplay(dateString) {
+            try {
+                const direct = String(dateString || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
+                if (direct) return direct[3] + '/' + direct[2] + '/' + direct[1];
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return dateString;
+                return date.toLocaleDateString('es-GT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch {
+                return dateString;
+            }
+        }
+
+        async function deleteRecord(rowIndex, absoluteRowIndex) {
+            const result = await Swal.fire({
+                title: '¿Eliminar registro?',
+                text: "Esta acción no se puede deshacer",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (result.isConfirmed) {
+                try {
+                    showLoading('Eliminando registro...');
+                    const deleteResult = await callAPI('DELETE_INDICATOR', { 
+                        department: 'CRETEC', 
+                        rowIndex: rowIndex,
+                        absoluteRowIndex: absoluteRowIndex
+                    });
+                    
+                    if (deleteResult && deleteResult.success) {
+                        showNotification('Registro eliminado correctamente', 'success');
+                        loadDashboardData();
+                        loadStats();
+                    } else {
+                        showNotification(`Error: ${deleteResult?.message || 'No se pudo eliminar'}`, 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error al eliminar: ' + error.message, 'error');
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+
+        function editRecord(rowIndex, absoluteRowIndex) {
+            if (!currentData || !currentData.rows || rowIndex >= currentData.rows.length) {
+                showNotification('Error: No se pudo cargar el registro para editar', 'error');
+                return;
+            }
+            
+            const row = currentData.rows[rowIndex];
+            if (!row) {
+                showNotification('Error: El registro seleccionado no existe', 'error');
+                return;
+            }
+            
+            const tipo = row[13] || 'Conferencia'; // Columna Tipo
+            
+            if (tipo === 'Conferencia') {
+                editConferenciaRecord(row, rowIndex, absoluteRowIndex);
+            } else if (tipo === 'Evento') {
+                editEventoRecord(row, rowIndex, absoluteRowIndex);
+            } else {
+                showNotification('Error: Tipo de registro no reconocido', 'error');
+            }
+        }
+
+        function editConferenciaRecord(row, rowIndex, absoluteRowIndex) {
+            const container = document.getElementById('conferencias-container');
+            const item = createConferenciaItem();
+
+            if (!container || !item) {
+                showNotification('Error: No se pudo construir la plantilla de conferencia', 'error');
+                return;
+            }
+
+            const fecha = normalizeDateForInput(row[2]);
+            const tema = row[4] || '';
+            const modalidad = row[5] || 'Presencial';
+            const sectorStr = String(row[6] || 'Pub:0, Priv:0, Aca:0');
+            const totalAsistentes = Number(row[7]) || 0;
+            const lugar = row[8] || 'Guatemala';
+            const duracion = row[9] || '2 horas';
+            const observaciones = row[10] || '';
+
+            const publico = extractSectorValue(sectorStr, 'Pub');
+            const privado = extractSectorValue(sectorStr, 'Priv');
+            const academia = extractSectorValue(sectorStr, 'Aca');
+
+            setItemTitle(item, 'Editar Conferencia');
+            setFieldValue(item, 'input[name="fecha_conferencia[]"]', fecha);
+            setFieldValue(item, 'input[name="tema_conferencia[]"]', tema);
+            setFieldValue(item, 'select[name="modalidad_conferencia[]"]', modalidad);
+            setFieldValue(item, 'input[name="asistentes_publico[]"]', publico);
+            setFieldValue(item, 'input[name="asistentes_privado[]"]', privado);
+            setFieldValue(item, 'input[name="asistentes_academia[]"]', academia);
+            setFieldValue(item, 'input[name="total_asistentes_conf[]"]', totalAsistentes);
+            setFieldValue(item, 'select[name="lugar_evento[]"]', lugar);
+            setFieldValue(item, 'select[name="duracion_evento[]"]', duracion);
+            setFieldValue(item, 'textarea[name="observaciones_conferencia[]"]', observaciones);
+
+            container.replaceChildren(item);
+            counters.conferencia = 1;
+
+            setElementValue('conferencia-edit-index', rowIndex);
+            setElementValue('conferencia-absolute-row-index', absoluteRowIndex || '');
+            setElementValue('conferencia-edit-mode', 'true');
+
+            const submitText = document.getElementById('conferencia-submit-text');
+            const cancelButton = document.getElementById('cancel-conferencia-edit');
+            if (submitText) submitText.textContent = 'Actualizar Conferencia';
+            if (cancelButton) cancelButton.classList.remove('hidden');
+
+            switchTab('conferencias');
+            showNotification('Modo edición activado. Complete los cambios y haga clic en Actualizar.', 'info');
+        }
+
+        function editEventoRecord(row, rowIndex, absoluteRowIndex) {
+            const container = document.getElementById('eventos-container');
+            const item = createEventoItem();
+
+            if (!container || !item) {
+                showNotification('Error: No se pudo construir la plantilla de evento', 'error');
+                return;
+            }
+
+            const fecha = normalizeDateForInput(row[2]);
+            const area = row[4] || '';
+            const metodo = row[5] || 'Conferencia Magistral';
+            const sectorStr = String(row[6] || 'Pub:0, Priv:0, Aca:0');
+            const totalPersonas = Number(row[7]) || 0;
+            const organizacion = row[8] || '';
+            const observaciones = row[10] || '';
+            const justificacion = row[11] || '';
+
+            const publico = extractSectorValue(sectorStr, 'Pub');
+            const privado = extractSectorValue(sectorStr, 'Priv');
+            const academia = extractSectorValue(sectorStr, 'Aca');
+
+            setItemTitle(item, 'Editar Evento');
+            setFieldValue(item, 'input[name="fecha_evento[]"]', fecha);
+            setFieldValue(item, 'select[name="metodo_divulgacion[]"]', metodo);
+            setFieldValue(item, 'input[name="capacitados_publico[]"]', publico);
+            setFieldValue(item, 'input[name="capacitados_privado[]"]', privado);
+            setFieldValue(item, 'input[name="capacitados_academia[]"]', academia);
+            setFieldValue(item, 'input[name="personas_capacitadas[]"]', totalPersonas);
+            setFieldValue(item, 'input[name="area_evento[]"]', area);
+            setFieldValue(item, 'input[name="organizacion_evento[]"]', organizacion);
+            setFieldValue(item, 'textarea[name="observaciones_evento[]"]', observaciones);
+
+            container.replaceChildren(item);
+            counters.evento = 1;
+
+            const justificacionField = document.querySelector('textarea[name="justificacion_cambios"]');
+            if (justificacionField) justificacionField.value = justificacion;
+
+            setElementValue('evento-edit-index', rowIndex);
+            setElementValue('evento-absolute-row-index', absoluteRowIndex || '');
+            setElementValue('evento-edit-mode', 'true');
+
+            const submitText = document.getElementById('evento-submit-text');
+            const cancelButton = document.getElementById('cancel-evento-edit');
+            if (submitText) submitText.textContent = 'Actualizar Evento';
+            if (cancelButton) cancelButton.classList.remove('hidden');
+
+            switchTab('eventos');
+            showNotification('Modo edición activado. Complete los cambios y haga clic en Actualizar.', 'info');
+        }
+
+        function setFieldValue(root, selector, value) {
+            const field = root ? root.querySelector(selector) : null;
+            if (field) field.value = value == null ? '' : String(value);
+        }
+
+        function setElementValue(id, value) {
+            const element = document.getElementById(id);
+            if (element) element.value = value == null ? '' : String(value);
+        }
+
+        function extractSectorValue(text, label) {
+            const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const match = String(text || '').match(new RegExp(`${escapedLabel}\\s*:\\s*(\\d+)`, 'i'));
+            return match ? Number(match[1]) : 0;
+        }
+
+        function normalizeDateForInput(value) {
+            if (!value) return '';
+
+            const raw = String(value).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+            const dmy=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (dmy) return dmy[3]+'-'+dmy[2]+'-'+dmy[1];
+            const isoDate = raw.match(/^(\d{4}-\d{2}-\d{2})T/);
+            if (isoDate) return isoDate[1];
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function cancelEdit(type) {
+            if (type === 'conferencia') {
+                resetConferenciaForm(true);
+            } else if (type === 'evento') {
+                resetEventoForm(true);
+            }
+        }
+
+        function filterByMonth() {
+            const month = document.getElementById('filter-mes').value;
+            loadDashboardData(month);
+        }
+
+        function logout() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: "Saldrás del sistema",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, salir',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    callAPI('LOGOUT').finally(() => {
+                        redirectToLoginSafe();
+                    });
+                }
+            });
+        }
+
+        // ============================================
+        // ESTADÍSTICAS Y CARGA INICIAL
+        // ============================================
+
+        async function loadStats() {
+            try {
+                const result = await callAPI('GET_INDICATOR_DATA', { department: 'CRETEC', limit: 100 });
+                if (result && result.success && result.data && result.data.rows) {
+                    updateStats(result.data.rows);
+                } else {
+                    document.getElementById('stat-conferencias').textContent = '0';
+                    document.getElementById('stat-eventos').textContent = '0';
+                    document.getElementById('stat-personas').textContent = '0';
+
+                    if (result && result.redirect) {
+                        showNotification(result.message || 'Sesión no aceptada por backend, pero no se cerró la pantalla.', 'warning');
+                    }
+                }
+            } catch (error) { 
+                console.error('Error cargando estadísticas:', error);
+                document.getElementById('stat-conferencias').innerHTML = '<span class="text-red-500">Error</span>';
+                document.getElementById('stat-eventos').innerHTML = '<span class="text-red-500">Error</span>';
+                document.getElementById('stat-personas').innerHTML = '<span class="text-red-500">Error</span>';
+            }
+        }
+
+        function updateStats(rows) {
+            let conferencias = 0, eventos = 0, personas = 0;
+            rows.forEach(row => {
+                const tipo = row[13] || 'Conferencia';
+                if (tipo === 'Conferencia') {
+                    conferencias += parseInt(row[3]) || 0; // Cantidad
+                } else if (tipo === 'Evento') {
+                    eventos += parseInt(row[3]) || 0; // Cantidad
+                }
+                personas += parseInt(row[7]) || 0; // Total Personas
+            });
+            document.getElementById('stat-conferencias').textContent = conferencias.toLocaleString();
+            document.getElementById('stat-eventos').textContent = eventos.toLocaleString();
+            document.getElementById('stat-personas').textContent = personas.toLocaleString();
+        }
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando CRETEC sin token...');
+
+            // Capturar las plantillas antes de cualquier limpieza o edición del DOM.
+            captureFormTemplates();
+
+            if (!initUserFromStorage()) {
+                return;
+            }
+
+            // Cargar estadísticas iniciales
+            loadStats();
+            
+            // Configurar event listeners para formularios
+            document.getElementById('conferencias-form').onsubmit = function(e) {
+                e.preventDefault();
+                submitForm('conferencias-form', 'Conferencias RT');
+            };
+
+            document.getElementById('eventos-form').onsubmit = function(e) {
+                e.preventDefault();
+                submitForm('eventos-form', 'Eventos Divulgación');
+            };
+            
+            // Cargar datos iniciales si estamos en la pestaña de datos
+            if (document.getElementById('datos').classList.contains('active')) {
+                loadDashboardData();
+            }
+            
+            // Establecer mes actual por defecto
+            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            const now = new Date();
+            const currentMonth = meses[now.getMonth()];
+            const mesSelect = document.querySelector('select[name="mes"]');
+            if (mesSelect) {
+                mesSelect.value = currentMonth;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COGUANOR - Catálogo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-tab.active { background-color: #5D5CDE; color: white; }
+    .nav-tab:not(.active) { background-color: #F3F4F6; color: #374151; }
+    .nav-tab:not(.active):hover { background-color: #E5E7EB; }
+    .fade-in { animation: fadeIn 0.25s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+  <header class="bg-gradient-to-r from-purple-600 to-indigo-700 shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <i class="fas fa-file-contract text-xl text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-white">COGUANOR</h1>
+            <p class="text-purple-100 text-sm">Comisión Guatemalteca de Normas - Esquema por catálogo</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="text-right text-white">
+            <p class="text-sm text-purple-200">Usuario activo</p>
+            <p class="font-semibold text-sm" id="user-name">Usuario COGUANOR</p>
+            <p class="text-xs text-purple-100" id="user-role">Usuario</p>
+          </div>
+          <button type="button" onclick="logout()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all">
+            <i class="fas fa-sign-out-alt mr-2"></i>Salir
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex space-x-1 overflow-x-auto">
+        <button type="button" onclick="switchTab('dashboard')" class="nav-tab active px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+          <i class="fas fa-home mr-2"></i>Inicio
+        </button>
+        <button type="button" onclick="switchTab('elaboradas')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+          <i class="fas fa-file-alt mr-2"></i>Normas Adoptadas
+        </button>
+        <button type="button" onclick="switchTab('distribuidas')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+          <i class="fas fa-share-alt mr-2"></i>Normas Distribuidas
+        </button>
+        <button type="button" onclick="switchTab('consultas')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+          <i class="fas fa-comments mr-2"></i>Consultas Técnicas
+        </button>
+        <button type="button" onclick="switchTab('datos')" class="nav-tab px-4 py-3 rounded-t-lg font-medium text-sm transition-all whitespace-nowrap">
+          <i class="fas fa-database mr-2"></i>Ver Datos
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div id="dashboard" class="tab-content active">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-file-alt text-purple-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Normas Adoptadas</p>
+              <div id="stat-elaboradas" class="text-2xl font-bold text-gray-900">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-share-alt text-blue-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Normas Distribuidas</p>
+              <div id="stat-distribuidas" class="text-2xl font-bold text-gray-900">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-comments text-green-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Consultas Técnicas</p>
+              <div id="stat-consultas" class="text-2xl font-bold text-gray-900">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <i class="fas fa-cog mr-2 text-gray-600"></i>Configuración general
+        </h3>
+        <form id="general-form">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Mes del reporte</label>
+              <select name="mes" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" required>
+                <option value="">Seleccione el mes</option>
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+              </select>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-800">
+              Este módulo ahora guarda registros individuales por catálogo. Eso permite editar exactamente la fila correcta y evita errores de indexación al momento de corregir datos.
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="elaboradas" class="tab-content">
+      <div class="bg-white rounded-xl shadow-sm border">
+        <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 rounded-t-xl flex items-center justify-between">
+          <h3 class="text-xl font-bold text-white">
+            <i class="fas fa-file-alt mr-2"></i>Normas Adoptadas
+          </h3>
+          <span id="total-elaboradas" class="text-white text-xl font-bold">0</span>
+        </div>
+
+        <div class="p-6">
+          <div id="edit-banner-elaboradas" class="hidden mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg"></div>
+
+          <form id="elaboradas-form" class="space-y-6">
+            <div id="elaboradas-container" class="space-y-4">
+              <div class="elaborada-item border border-purple-200 rounded-lg p-4 bg-purple-50 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-lg font-semibold text-purple-800">Norma adoptada #1</h4>
+                  <button type="button" onclick="removeItem(this, 'elaboradas-container', 'elaborada-item')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                    <i class="fas fa-trash mr-1"></i>Eliminar
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">No. de norma</label>
+                    <input type="text" name="numero_norma_adoptadas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Ej. 13001" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CTN</label>
+                    <select name="ctn_adoptadas[]" class="catalogo-select w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required></select>
+                  </div>
+
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la norma</label>
+                    <input type="text" name="nombre_norma_adoptadas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Nombre completo de la norma" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <input type="number" name="cantidad_adoptadas[]" class="sum-elaboradas w-full px-3 py-2 border border-gray-300 rounded-lg text-base" min="1" value="1" required>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                    <select name="mes_adoptadas[]" class="mes-adoptada w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                    <option value="">Seleccione el mes</option>
+                    <option value="Enero">Enero</option>
+                    <option value="Febrero">Febrero</option>
+                    <option value="Marzo">Marzo</option>
+                    <option value="Abril">Abril</option>
+                    <option value="Mayo">Mayo</option>
+                    <option value="Junio">Junio</option>
+                    <option value="Julio">Julio</option>
+                    <option value="Agosto">Agosto</option>
+                    <option value="Septiembre">Septiembre</option>
+                    <option value="Octubre">Octubre</option>
+                    <option value="Noviembre">Noviembre</option>
+                    <option value="Diciembre">Diciembre</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 justify-between items-center">
+              <button type="button" id="add-elaboradas-btn" onclick="addItem('elaboradas-container', 'elaborada-item', 'Norma adoptada')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-plus mr-2"></i>Agregar norma
+              </button>
+
+              <div class="flex gap-3">
+                <button type="button" id="cancel-edit-elaboradas" onclick="cancelEdit('elaboradas')" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all">
+                  Cancelar edición
+                </button>
+                <button type="submit" class="submit-btn bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+                  <i class="fas fa-save mr-2"></i>Guardar Normas Adoptadas
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="distribuidas" class="tab-content">
+      <div class="bg-white rounded-xl shadow-sm border">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl flex items-center justify-between">
+          <h3 class="text-xl font-bold text-white">
+            <i class="fas fa-share-alt mr-2"></i>Distribución de Normas
+          </h3>
+          <span id="total-distribuidas" class="text-white text-xl font-bold">0</span>
+        </div>
+
+        <div class="p-6">
+          <div id="edit-banner-distribuidas" class="hidden mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg"></div>
+
+          <form id="distribuidas-form" class="space-y-6">
+            <div id="distribuidas-container" class="space-y-4">
+              <div class="distribuida-item border border-blue-200 rounded-lg p-4 bg-blue-50 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-lg font-semibold text-blue-800">Distribución #1</h4>
+                  <button type="button" onclick="removeItem(this, 'distribuidas-container', 'distribuida-item')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                    <i class="fas fa-trash mr-1"></i>Eliminar
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                    <input type="date" name="fecha_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del solicitante</label>
+                    <input type="text" name="nombre_solicitante_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Nombre completo del solicitante" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Organización</label>
+                    <input type="text" name="organizacion_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Nombre de la organización">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <input type="number" name="cantidad_distribuidas[]" class="sum-distribuidas w-full px-3 py-2 border border-gray-300 rounded-lg text-base" min="1" value="1" required>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CTN</label>
+                    <select name="ctn_distribuidas[]" class="catalogo-select w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required></select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Norma</label>
+                    <input type="text" name="norma_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Número o nombre de la norma" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Forma de contacto</label>
+                    <select name="forma_contacto_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                      <option value="">Seleccione una opción</option>
+                      <option value="Persona">Persona</option>
+                      <option value="Plataforma">Plataforma</option>
+                      <option value="Correo electrónico">Correo electrónico</option>
+                      <option value="Teléfono">Teléfono</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Detalle del contacto</label>
+                    <input type="text" name="detalle_contacto_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Correo, teléfono, plataforma, persona u otro">
+                  </div>
+                </div>
+
+                <div class="border border-blue-200 bg-white rounded-lg p-4 mb-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h5 class="font-semibold text-gray-800">Campos adicionales</h5>
+                      <p class="text-xs text-gray-500">Agregue los datos complementarios que necesite para esta distribución.</p>
+                    </div>
+                    <button type="button" onclick="addExtraField(this)" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium">
+                      <i class="fas fa-plus mr-1"></i>Agregar campo
+                    </button>
+                  </div>
+
+                  <div class="extra-fields-container space-y-3">
+                    <div class="extra-field-row grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      <div class="md:col-span-4">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Nombre del campo</label>
+                        <input type="text" name="extra_key_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej. Tipo de entrega">
+                      </div>
+                      <div class="md:col-span-7">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Valor</label>
+                        <input type="text" name="extra_value_distribuidas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Detalle">
+                      </div>
+                      <div class="md:col-span-1">
+                        <button type="button" onclick="removeExtraField(this)" class="w-full bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg" title="Quitar campo">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                  <textarea name="observaciones_distribuidas[]" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Observaciones generales"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 justify-between items-center">
+              <button type="button" id="add-distribuidas-btn" onclick="addItem('distribuidas-container', 'distribuida-item', 'Distribución')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-plus mr-2"></i>Agregar distribución
+              </button>
+
+              <div class="flex gap-3">
+                <button type="button" id="cancel-edit-distribuidas" onclick="cancelEdit('distribuidas')" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all">
+                  Cancelar edición
+                </button>
+                <button type="submit" class="submit-btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+                  <i class="fas fa-save mr-2"></i>Guardar Normas Distribuidas
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="consultas" class="tab-content">
+      <div class="bg-white rounded-xl shadow-sm border">
+        <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 rounded-t-xl flex items-center justify-between">
+          <h3 class="text-xl font-bold text-white">
+            <i class="fas fa-comments mr-2"></i>Consultas Técnicas
+          </h3>
+          <span id="total-consultas" class="text-white text-xl font-bold">0</span>
+        </div>
+
+        <div class="p-6">
+          <div id="edit-banner-consultas" class="hidden mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg"></div>
+
+          <form id="consultas-form" class="space-y-6">
+            <div id="consultas-container" class="space-y-4">
+              <div class="consulta-item border border-green-200 rounded-lg p-4 bg-green-50 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-lg font-semibold text-green-800">Consulta #1</h4>
+                  <button type="button" onclick="removeItem(this, 'consultas-container', 'consulta-item')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
+                    <i class="fas fa-trash mr-1"></i>Eliminar
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sector</label>
+                    <select name="sector_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                      <option value="">Seleccione sector</option>
+                      <option value="Público">Público</option>
+                      <option value="Privado">Privado</option>
+                      <option value="Academia">Academia</option>
+                      <option value="Usuario Consumidor">Usuario Consumidor</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de receptor</label>
+                    <select name="tipo_receptor_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required>
+                      <option value="">Seleccione tipo</option>
+                      <option value="Institución">Institución</option>
+                      <option value="Usuario consumidor">Usuario consumidor</option>
+                      <option value="Persona individual">Persona individual</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre institución / usuario consumidor</label>
+                    <input type="text" name="nombre_sector_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Nombre de la institución o persona" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <input type="number" name="cantidad_consultas[]" class="sum-consultas w-full px-3 py-2 border border-gray-300 rounded-lg text-base" min="1" value="1" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Código AMSE</label>
+                    <input type="text" name="codigo_amse_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Ej. AMSE-001">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Catálogo norma</label>
+                    <select name="catalogo_norma_consultas[]" class="catalogo-select w-full px-3 py-2 border border-gray-300 rounded-lg text-base" required></select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Área técnica</label>
+                    <input type="text" name="area_tecnica_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Área técnica específica">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contacto</label>
+                    <input type="text" name="contacto_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Nombre del contacto">
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                    <input type="text" name="telefono_consultas[]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" placeholder="Número telefónico">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                  <textarea name="observaciones_consultas[]" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Observaciones específicas"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 justify-between items-center">
+              <button type="button" id="add-consultas-btn" onclick="addItem('consultas-container', 'consulta-item', 'Consulta')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-plus mr-2"></i>Agregar consulta
+              </button>
+
+              <div class="flex gap-3">
+                <button type="button" id="cancel-edit-consultas" onclick="cancelEdit('consultas')" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all">
+                  Cancelar edición
+                </button>
+                <button type="submit" class="submit-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+                  <i class="fas fa-save mr-2"></i>Guardar Consultas
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="datos" class="tab-content">
+      <div class="bg-white rounded-xl shadow-sm border">
+        <div class="px-6 py-4 border-b flex items-center justify-between gap-4 flex-wrap">
+          <h3 class="text-lg font-semibold text-gray-900">
+            <i class="fas fa-database mr-2"></i>Datos Almacenados
+          </h3>
+
+          <div class="flex gap-3 items-center">
+            <select id="filtro-mes-datos" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <option value="">Todos los meses</option>
+              <option value="Enero">Enero</option>
+              <option value="Febrero">Febrero</option>
+              <option value="Marzo">Marzo</option>
+              <option value="Abril">Abril</option>
+              <option value="Mayo">Mayo</option>
+              <option value="Junio">Junio</option>
+              <option value="Julio">Julio</option>
+              <option value="Agosto">Agosto</option>
+              <option value="Septiembre">Septiembre</option>
+              <option value="Octubre">Octubre</option>
+              <option value="Noviembre">Noviembre</option>
+              <option value="Diciembre">Diciembre</option>
+            </select>
+            <button type="button" onclick="loadDashboardData()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              <i class="fas fa-sync-alt mr-2"></i>Recargar
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="mb-5 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-4 py-3 text-sm">
+            Los registros se muestran en tres espacios independientes: Normas Adoptadas, Normas Distribuidas y Consultas Técnicas. La hoja de cálculo continúa utilizando una sola estructura de 14 columnas.
+          </div>
+          <div id="dashboard-content">
+            <p class="text-gray-600 text-center py-4">Seleccione esta pestaña para ver datos...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="notifications" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+  <script>
+    const COGUANOR_CONFIG = {
+      APP_URL: <?!= typeof appUrl !== 'undefined' ? JSON.stringify(appUrl) : '""' ?>,
+      PAGE: <?!= typeof page !== 'undefined' ? JSON.stringify(page) : '"COGUANOR"' ?>,
+      USER: {},
+      IS_EDITOR: false
+    };
+
+    const CATALOGO_NORMA = [
+      'Asuntos generales',
+      'Normalización, metrología y ciencias sociales',
+      'Salud',
+      'Construcción',
+      'Electrotecnia',
+      'Ingeniería sanitaria',
+      'Industrias químicas',
+      'Industrias agrícolas y alimenticias',
+      'Textiles',
+      'Agricultura y máquinas agrícolas',
+      'Gestión de la calidad',
+      'Tecnología de la información',
+      'Salud y seguridad ocupacional',
+      'Ambiente',
+      'Turismo',
+      'Otros'
+    ];
+
+    const FORM_META = {
+      elaboradas: {
+        formId: 'elaboradas-form',
+        containerId: 'elaboradas-container',
+        itemClass: 'elaborada-item',
+        submitLabel: 'Guardar Normas Adoptadas',
+        updateLabel: 'Actualizar Norma Adoptada',
+        bannerId: 'edit-banner-elaboradas',
+        cancelId: 'cancel-edit-elaboradas',
+        addButtonId: 'add-elaboradas-btn',
+        totalId: 'total-elaboradas',
+        sumClass: 'sum-elaboradas',
+        typeValue: 'Norma Adoptada'
+      },
+      distribuidas: {
+        formId: 'distribuidas-form',
+        containerId: 'distribuidas-container',
+        itemClass: 'distribuida-item',
+        submitLabel: 'Guardar Normas Distribuidas',
+        updateLabel: 'Actualizar Norma Distribuida',
+        bannerId: 'edit-banner-distribuidas',
+        cancelId: 'cancel-edit-distribuidas',
+        addButtonId: 'add-distribuidas-btn',
+        totalId: 'total-distribuidas',
+        sumClass: 'sum-distribuidas',
+        typeValue: 'Norma Distribuida'
+      },
+      consultas: {
+        formId: 'consultas-form',
+        containerId: 'consultas-container',
+        itemClass: 'consulta-item',
+        submitLabel: 'Guardar Consultas',
+        updateLabel: 'Actualizar Consulta Técnica',
+        bannerId: 'edit-banner-consultas',
+        cancelId: 'cancel-edit-consultas',
+        addButtonId: 'add-consultas-btn',
+        totalId: 'total-consultas',
+        sumClass: 'sum-consultas',
+        typeValue: 'Consulta Técnica'
+      }
+    };
+
+    const currentEdit = {
+      section: null,
+      absoluteRowIndex: null
+    };
+
+    function initCatalogSelectors(root = document) {
+      root.querySelectorAll('.catalogo-select').forEach(select => {
+        const currentValue = select.dataset.value || select.value || '';
+        const values = CATALOGO_NORMA.slice();
+
+        // Conserva valores históricos aunque ya no estén en el catálogo actual.
+        if (currentValue && !values.includes(currentValue)) {
+          values.push(currentValue);
+        }
+
+        select.innerHTML = '<option value="">Seleccione CTN</option>' +
+          values.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
+
+        if (currentValue) select.value = currentValue;
+      });
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+
+      document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+      if (tabName === 'datos') {
+        loadDashboardData();
+      }
+    }
+
+    function addItem(containerId, itemClass, labelBase) {
+      const container = document.getElementById(containerId);
+      const template = container.querySelector('.' + itemClass).cloneNode(true);
+      const nextIndex = container.querySelectorAll('.' + itemClass).length + 1;
+
+      template.querySelector('h4').textContent = `${labelBase} #${nextIndex}`;
+
+      template.querySelectorAll('input, textarea').forEach(field => {
+        if (field.type === 'number' && field.hasAttribute('min') && Number(field.getAttribute('min')) >= 1) {
+          field.value = '1';
+        } else {
+          field.value = '';
+        }
+      });
+
+      template.querySelectorAll('select').forEach(field => {
+        field.dataset.value = '';
+        field.value = '';
+      });
+
+      // Cada distribución nueva inicia con un solo campo adicional vacío.
+      template.querySelectorAll('.extra-fields-container').forEach(extraContainer => {
+        const rows = extraContainer.querySelectorAll('.extra-field-row');
+        rows.forEach((row, index) => {
+          if (index > 0) row.remove();
+        });
+        const first = extraContainer.querySelector('.extra-field-row');
+        if (first) first.querySelectorAll('input').forEach(input => input.value = '');
+      });
+
+      // El mes general se usa como valor inicial para las normas adoptadas.
+      const monthField = template.querySelector('.mes-adoptada');
+      if (monthField) monthField.value = getMesSeleccionado();
+
+      container.appendChild(template);
+      initCatalogSelectors(template);
+      recalcTotals();
+    }
+
+    function addExtraField(button) {
+      const item = button.closest('.distribuida-item');
+      const container = item.querySelector('.extra-fields-container');
+      const template = container.querySelector('.extra-field-row').cloneNode(true);
+      template.querySelectorAll('input').forEach(input => input.value = '');
+      container.appendChild(template);
+    }
+
+    function removeExtraField(button) {
+      const container = button.closest('.extra-fields-container');
+      const rows = container.querySelectorAll('.extra-field-row');
+
+      if (rows.length <= 1) {
+        rows[0].querySelectorAll('input').forEach(input => input.value = '');
+        return;
+      }
+
+      button.closest('.extra-field-row').remove();
+    }
+
+    function removeItem(button, containerId, itemClass) {
+      const container = document.getElementById(containerId);
+      const items = container.querySelectorAll('.' + itemClass);
+      if (items.length <= 1) return;
+
+      button.closest('.' + itemClass).remove();
+      renumberItems(containerId, itemClass);
+      recalcTotals();
+    }
+
+    function renumberItems(containerId, itemClass) {
+      const container = document.getElementById(containerId);
+      const items = container.querySelectorAll('.' + itemClass);
+      items.forEach((item, index) => {
+        const header = item.querySelector('h4');
+        if (!header) return;
+
+        if (itemClass === 'elaborada-item') header.textContent = `Norma adoptada #${index + 1}`;
+        if (itemClass === 'distribuida-item') header.textContent = `Distribución #${index + 1}`;
+        if (itemClass === 'consulta-item') header.textContent = `Consulta #${index + 1}`;
+      });
+    }
+
+    function resetSection(section) {
+      const meta = FORM_META[section];
+      const form = document.getElementById(meta.formId);
+      form.reset();
+
+      const container = document.getElementById(meta.containerId);
+      const items = container.querySelectorAll('.' + meta.itemClass);
+      items.forEach((item, idx) => { if (idx > 0) item.remove(); });
+
+      const firstItem = container.querySelector('.' + meta.itemClass);
+      firstItem.querySelectorAll('input, textarea').forEach(field => {
+        if (field.type === 'number' && field.hasAttribute('min') && Number(field.getAttribute('min')) >= 1) {
+          field.value = '1';
+        } else {
+          field.value = '';
+        }
+      });
+      firstItem.querySelectorAll('select').forEach(field => {
+        field.dataset.value = '';
+        field.value = '';
+      });
+
+      firstItem.querySelectorAll('.extra-fields-container').forEach(extraContainer => {
+        const rows = extraContainer.querySelectorAll('.extra-field-row');
+        rows.forEach((row, index) => { if (index > 0) row.remove(); });
+        const first = extraContainer.querySelector('.extra-field-row');
+        if (first) first.querySelectorAll('input').forEach(input => input.value = '');
+      });
+
+      const monthField = firstItem.querySelector('.mes-adoptada');
+      if (monthField) monthField.value = getMesSeleccionado();
+
+      initCatalogSelectors(firstItem);
+      renumberItems(meta.containerId, meta.itemClass);
+      document.getElementById(meta.totalId).textContent = section === 'elaboradas' || section === 'distribuidas' ? '1' : '0';
+
+      const banner = document.getElementById(meta.bannerId);
+      banner.classList.add('hidden');
+      banner.textContent = '';
+
+      document.getElementById(meta.cancelId).classList.add('hidden');
+      if (meta.addButtonId) document.getElementById(meta.addButtonId).classList.remove('hidden');
+
+      const submitBtn = form.querySelector('.submit-btn');
+      submitBtn.innerHTML = `<i class="fas fa-save mr-2"></i>${meta.submitLabel}`;
+
+      if (currentEdit.section === section) {
+        currentEdit.section = null;
+        currentEdit.absoluteRowIndex = null;
+      }
+
+      recalcTotals();
+    }
+
+    function cancelEdit(section) {
+      resetSection(section);
+      showNotification('Edición cancelada', 'success');
+    }
+
+    function beginEdit(section, absoluteRowIndex) {
+      currentEdit.section = section;
+      currentEdit.absoluteRowIndex = absoluteRowIndex;
+
+      const meta = FORM_META[section];
+      const banner = document.getElementById(meta.bannerId);
+      banner.textContent = `Editando la fila real ${absoluteRowIndex}. Al guardar se actualizará exactamente ese registro sin cambiar la estructura de la hoja.`;
+      banner.classList.remove('hidden');
+
+      document.getElementById(meta.cancelId).classList.remove('hidden');
+      if (meta.addButtonId) document.getElementById(meta.addButtonId).classList.add('hidden');
+
+      const submitBtn = document.getElementById(meta.formId).querySelector('.submit-btn');
+      submitBtn.innerHTML = `<i class="fas fa-pen mr-2"></i>${meta.updateLabel}`;
+    }
+
+    function getStoredAuth() {
+      let raw = '';
+
+      try {
+        raw = sessionStorage.getItem('dsnc_auth') || '';
+      } catch (error) {}
+
+      if (!raw) {
+        try {
+          raw = localStorage.getItem('dsnc_auth') || '';
+        } catch (error) {}
+      }
+
+      if (!raw) return null;
+
+      try {
+        const parsed = JSON.parse(raw);
+
+        const username = String(
+          parsed.username ||
+          parsed.user ||
+          (parsed.auth && (parsed.auth.username || parsed.auth.user)) ||
+          ''
+        ).trim().toLowerCase();
+
+        const password = String(
+          parsed.password ||
+          parsed.pass ||
+          (parsed.auth && (parsed.auth.password || parsed.auth.pass)) ||
+          ''
+        ).trim();
+
+        const user = parsed.userData || parsed.userInfo || parsed.profile || parsed.userObject || parsed.usuario || parsed.currentUser || parsed.user || {};
+
+        if (!username || !password) return null;
+
+        return {
+          username,
+          password,
+          user: typeof user === 'object' ? user : {}
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function getAuthPayload() {
+      const auth = getStoredAuth();
+      if (!auth || !auth.username || !auth.password) return '';
+
+      return JSON.stringify({
+        username: auth.username,
+        password: auth.password
+      });
+    }
+
+    function getAuthUser() {
+      const auth = getStoredAuth();
+      let user = auth && auth.user && typeof auth.user === 'object' ? auth.user : {};
+
+      if (!user || !Object.keys(user).length) {
+        try {
+          user = JSON.parse(localStorage.getItem('dsnc_user') || '{}');
+        } catch (error) {
+          user = {};
+        }
+      }
+
+      if (!user || typeof user !== 'object') user = {};
+
+      return {
+        username: user.username || (auth ? auth.username : ''),
+        name: user.name || user.nombre || user.username || (auth ? auth.username : 'Usuario COGUANOR'),
+        role: user.role || user.rol || '',
+        department: user.department || user.departamento || 'COGUANOR',
+        email: user.email || ''
+      };
+    }
+
+    function redirectToLoginLocal(message) {
+      if (message) showNotification(message, 'error');
+
+      setTimeout(() => {
+        const base = String(COGUANOR_CONFIG.APP_URL || '').split('?')[0];
+        window.location.href = base + '?page=login';
+      }, 900);
+    }
+
+    function callAPI(action, data = {}) {
+      return new Promise((resolve) => {
+        const authPayload = getAuthPayload();
+
+        if (!authPayload && action !== 'TEST_CONNECTION') {
+          resolve({
+            success: false,
+            message: 'No hay sesión local activa. Inicie sesión nuevamente.',
+            redirect: true
+          });
+          return;
+        }
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(response) {
+              resolve(response || { success: false, message: 'Respuesta vacía del servidor.' });
+            })
+            .withFailureHandler(function(error) {
+              resolve({
+                success: false,
+                message: error && error.message ? error.message : String(error || 'Error de conexión con Apps Script')
+              });
+            })
+            .dsncApi(action, data || {}, authPayload);
+          return;
+        }
+
+        const callbackName = 'coguanor_cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        window[callbackName] = function(response) {
+          try { delete window[callbackName]; } catch (error) {}
+          resolve(response || { success: false, message: 'Respuesta vacía del servidor.' });
+        };
+
+        const params = new URLSearchParams({
+          action,
+          auth: authPayload,
+          callback: callbackName,
+          timestamp: new Date().toISOString()
+        });
+
+        Object.keys(data || {}).forEach(key => {
+          const value = data[key];
+          if (value === undefined || value === null) return;
+          params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        });
+
+        const script = document.createElement('script');
+        script.src = COGUANOR_CONFIG.APP_URL + '?' + params.toString();
+
+        script.onerror = function() {
+          try { delete window[callbackName]; } catch (error) {}
+          resolve({ success: false, message: 'Error de conexión con Apps Script' });
+        };
+
+        document.head.appendChild(script);
+
+        setTimeout(() => {
+          if (window[callbackName]) {
+            try { delete window[callbackName]; } catch (error) {}
+            resolve({ success: false, message: 'Tiempo de espera agotado' });
+          }
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }, 20000);
+      });
+    }
+
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
+      const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+      notification.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm flex items-center`;
+      notification.innerHTML = `<i class="fas ${icon} mr-2"></i><span class="font-medium">${message}</span>`;
+
+      const holder = document.getElementById('notifications');
+      holder.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-8px)';
+        setTimeout(() => notification.remove(), 400);
+      }, 3500);
+    }
+
+    async function logout() {
+      try {
+        await callAPI('LOGOUT', {});
+      } catch (_) {}
+
+      try {
+        sessionStorage.removeItem('dsnc_auth');
+        sessionStorage.removeItem('dsnc_active');
+        localStorage.removeItem('dsnc_auth');
+        localStorage.removeItem('dsnc_user');
+        localStorage.removeItem('dsnc_session');
+      } catch (error) {}
+
+      const base = String(COGUANOR_CONFIG.APP_URL || '').split('?')[0];
+      window.location.href = base + '?page=login';
+    }
+
+    function getMesSeleccionado() {
+      return document.querySelector('#general-form select[name="mes"]').value || '';
+    }
+
+    function buildPayloadForElaboradas() {
+      const registros = [];
+      const mesGeneral = getMesSeleccionado();
+
+      document.querySelectorAll('.elaborada-item').forEach(item => {
+        const registro = {
+          numero_norma: item.querySelector('input[name="numero_norma_adoptadas[]"]').value.trim(),
+          ctn: item.querySelector('select[name="ctn_adoptadas[]"]').value,
+          nombre_norma: item.querySelector('input[name="nombre_norma_adoptadas[]"]').value.trim(),
+          cantidad: item.querySelector('input[name="cantidad_adoptadas[]"]').value,
+          mes: item.querySelector('select[name="mes_adoptadas[]"]').value || mesGeneral
+        };
+
+        if (registro.numero_norma && registro.ctn && registro.nombre_norma && registro.cantidad && registro.mes) {
+          registros.push(registro);
+        }
+      });
+
+      return {
+        section: 'adoptadas',
+        registros_adoptadas: JSON.stringify(registros)
+      };
+    }
+
+    function collectExtraFields(item) {
+      const extras = [];
+
+      item.querySelectorAll('.extra-field-row').forEach(row => {
+        const nombre = row.querySelector('input[name="extra_key_distribuidas[]"]').value.trim();
+        const valor = row.querySelector('input[name="extra_value_distribuidas[]"]').value.trim();
+
+        if (nombre || valor) {
+          extras.push({ nombre, valor });
+        }
+      });
+
+      return extras;
+    }
+
+    function buildPayloadForDistribuidas() {
+      const registros = [];
+
+      document.querySelectorAll('.distribuida-item').forEach(item => {
+        const registro = {
+          fecha: item.querySelector('input[name="fecha_distribuidas[]"]').value,
+          nombre_solicitante: item.querySelector('input[name="nombre_solicitante_distribuidas[]"]').value.trim(),
+          organizacion: item.querySelector('input[name="organizacion_distribuidas[]"]').value.trim(),
+          cantidad: item.querySelector('input[name="cantidad_distribuidas[]"]').value,
+          ctn: item.querySelector('select[name="ctn_distribuidas[]"]').value,
+          norma: item.querySelector('input[name="norma_distribuidas[]"]').value.trim(),
+          forma_contacto: item.querySelector('select[name="forma_contacto_distribuidas[]"]').value,
+          detalle_contacto: item.querySelector('input[name="detalle_contacto_distribuidas[]"]').value.trim(),
+          campos_adicionales: collectExtraFields(item),
+          observaciones: item.querySelector('textarea[name="observaciones_distribuidas[]"]').value.trim()
+        };
+
+        if (
+          registro.fecha &&
+          registro.nombre_solicitante &&
+          registro.cantidad &&
+          registro.ctn &&
+          registro.norma &&
+          registro.forma_contacto
+        ) {
+          registros.push(registro);
+        }
+      });
+
+      return {
+        section: 'distribuidas',
+        registros_distribuidas: JSON.stringify(registros)
+      };
+    }
+
+    function buildPayloadForConsultas() {
+      const registros = [];
+      document.querySelectorAll('.consulta-item').forEach(item => {
+        const registro = {
+          sector: item.querySelector('select[name="sector_consultas[]"]').value,
+          tipo_receptor: item.querySelector('select[name="tipo_receptor_consultas[]"]').value,
+          nombre_sector: item.querySelector('input[name="nombre_sector_consultas[]"]').value.trim(),
+          cantidad: item.querySelector('input[name="cantidad_consultas[]"]').value,
+          codigo_amse: item.querySelector('input[name="codigo_amse_consultas[]"]').value.trim(),
+          catalogo_norma: item.querySelector('select[name="catalogo_norma_consultas[]"]').value,
+          area_tecnica: item.querySelector('input[name="area_tecnica_consultas[]"]').value.trim(),
+          contacto: item.querySelector('input[name="contacto_consultas[]"]').value.trim(),
+          telefono: item.querySelector('input[name="telefono_consultas[]"]').value.trim(),
+          observaciones: item.querySelector('textarea[name="observaciones_consultas[]"]').value.trim()
+        };
+        if (
+          registro.sector &&
+          registro.tipo_receptor &&
+          registro.nombre_sector &&
+          registro.catalogo_norma &&
+          registro.cantidad
+        ) registros.push(registro);
+      });
+
+      return {
+        section: 'consultas',
+        registros_consultas: JSON.stringify(registros)
+      };
+    }
+
+    async function submitForm(section) {
+      const meta = FORM_META[section];
+      const form = document.getElementById(meta.formId);
+
+      if (!form.reportValidity()) return;
+
+      const mesGeneral = getMesSeleccionado();
+      let payload = {
+        department: 'COGUANOR',
+        mes: mesGeneral
+      };
+
+      if (section === 'elaboradas') {
+        payload = { ...payload, ...buildPayloadForElaboradas() };
+        const adoptadas = JSON.parse(payload.registros_adoptadas || '[]');
+
+        if (!adoptadas.length) {
+          showNotification('Complete todos los datos de al menos una norma adoptada', 'error');
+          return;
+        }
+
+        payload.mes = mesGeneral || adoptadas[0].mes || '';
+      }
+
+      if (section === 'distribuidas') {
+        if (!mesGeneral) {
+          showNotification('Seleccione el mes del reporte antes de guardar', 'error');
+          switchTab('dashboard');
+          return;
+        }
+
+        payload = { ...payload, ...buildPayloadForDistribuidas() };
+        const distribuidas = JSON.parse(payload.registros_distribuidas || '[]');
+
+        if (!distribuidas.length) {
+          showNotification('Complete todos los datos obligatorios de la distribución', 'error');
+          return;
+        }
+      }
+
+      if (section === 'consultas') {
+        if (!mesGeneral) {
+          showNotification('Seleccione el mes del reporte antes de guardar', 'error');
+          switchTab('dashboard');
+          return;
+        }
+
+        payload = { ...payload, ...buildPayloadForConsultas() };
+        const consultas = JSON.parse(payload.registros_consultas || '[]');
+
+        if (!consultas.length) {
+          showNotification('Complete todos los datos obligatorios de la consulta', 'error');
+          return;
+        }
+      }
+
+      if (currentEdit.section === section && currentEdit.absoluteRowIndex) {
+        payload.absoluteRowIndex = currentEdit.absoluteRowIndex;
+      }
+
+      const submitBtn = form.querySelector('.submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-70', 'cursor-wait');
+      submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Guardando...';
+
+      try {
+        const result = await callAPI('SAVE_INDICATOR_DATA', payload);
+
+        if (result && result.success) {
+          showNotification(result.message || 'Registro guardado correctamente', 'success');
+          resetSection(section);
+          loadStats();
+
+          if (document.getElementById('datos').classList.contains('active')) {
+            loadDashboardData();
+          }
+        } else {
+          showNotification(result?.message || 'No se pudo guardar', 'error');
+        }
+      } catch (error) {
+        showNotification(error.message || 'Error inesperado al guardar', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70', 'cursor-wait');
+
+        const editing = currentEdit.section === section && currentEdit.absoluteRowIndex;
+        submitBtn.innerHTML = editing
+          ? `<i class="fas fa-pen mr-2"></i>${meta.updateLabel}`
+          : `<i class="fas fa-save mr-2"></i>${meta.submitLabel}`;
+      }
+    }
+
+    async function loadStats() {
+      document.getElementById('stat-elaboradas').innerHTML = '<i class="fas fa-spinner fa-spin text-purple-500"></i>';
+      document.getElementById('stat-distribuidas').innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+      document.getElementById('stat-consultas').innerHTML = '<i class="fas fa-spinner fa-spin text-green-500"></i>';
+
+      try {
+        const result = await callAPI('GET_INDICATOR_DATA', {
+          department: 'COGUANOR',
+          limit: 500
+        });
+
+        if (!result || !result.success || !result.data || !Array.isArray(result.data.rows)) {
+          document.getElementById('stat-elaboradas').textContent = '0';
+          document.getElementById('stat-distribuidas').textContent = '0';
+          document.getElementById('stat-consultas').textContent = '0';
+          return;
+        }
+
+        const totals = { elaboradas: 0, distribuidas: 0, consultas: 0 };
+        result.data.rows.forEach(row => {
+          const tipo = String(row[2] || '').trim();
+          const cantidad = parseInt(row[3]) || 0;
+          if (tipo === 'Norma Adoptada' || tipo === 'Norma Elaborada') totals.elaboradas += cantidad;
+          if (tipo === 'Norma Distribuida') totals.distribuidas += cantidad;
+          if (tipo === 'Consulta Técnica') totals.consultas += cantidad;
+        });
+
+        document.getElementById('stat-elaboradas').textContent = totals.elaboradas.toLocaleString();
+        document.getElementById('stat-distribuidas').textContent = totals.distribuidas.toLocaleString();
+        document.getElementById('stat-consultas').textContent = totals.consultas.toLocaleString();
+      } catch (error) {
+        document.getElementById('stat-elaboradas').textContent = '0';
+        document.getElementById('stat-distribuidas').textContent = '0';
+        document.getElementById('stat-consultas').textContent = '0';
+      }
+    }
+
+    async function loadDashboardData() {
+      const content = document.getElementById('dashboard-content');
+      content.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12">
+          <i class="fas fa-circle-notch fa-spin text-4xl text-purple-500 mb-4"></i>
+          <p class="text-gray-500 font-medium">Cargando registros...</p>
+        </div>
+      `;
+
+      try {
+        const month = document.getElementById('filtro-mes-datos').value || '';
+        const result = await callAPI('GET_INDICATOR_DATA', {
+          department: 'COGUANOR',
+          month,
+          limit: 200
+        });
+
+        if (result && result.success && result.data) {
+          renderDashboardTable(result.data);
+        } else {
+          content.innerHTML = '<p class="text-center py-8 text-gray-500">No hay datos</p>';
+        }
+      } catch (error) {
+        content.innerHTML = `<p class="text-center py-8 text-red-500">${error.message}</p>`;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderDashboardTable(data) {
+      const content = document.getElementById('dashboard-content');
+
+      if (!data.rows || data.rows.length === 0) {
+        content.innerHTML = `
+          <div class="text-center py-12">
+            <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-folder-open text-gray-400 text-2xl"></i>
+            </div>
+            <p class="text-gray-500">No hay datos registrados aún</p>
+          </div>
+        `;
+        return;
+      }
+
+      window.__COGUANOR_TABLE_DATA__ = data;
+
+      const groups = {
+        adoptadas: [],
+        distribuidas: [],
+        consultas: []
+      };
+
+      data.rows.forEach((row, index) => {
+        const tipo = String(row[2] || '').trim();
+        const entry = {
+          row,
+          index,
+          absoluteRowIndex: Array.isArray(data.rowIndexes) ? data.rowIndexes[index] : null,
+          detail: getCoguanorDetail(row)
+        };
+
+        if (tipo === 'Norma Adoptada' || tipo === 'Norma Elaborada') groups.adoptadas.push(entry);
+        if (tipo === 'Norma Distribuida') groups.distribuidas.push(entry);
+        if (tipo === 'Consulta Técnica') groups.consultas.push(entry);
+      });
+
+      const totalVisible = groups.adoptadas.length + groups.distribuidas.length + groups.consultas.length;
+
+      content.innerHTML = `
+        <div class="mb-5 text-sm text-gray-600">
+          Mostrando ${totalVisible} registro(s) válidos de COGUANOR, separados por tipo.
+        </div>
+        <div class="space-y-8">
+          ${renderDataSection({
+            title: 'Normas Adoptadas',
+            icon: 'fa-file-circle-check',
+            headerClass: 'bg-purple-700',
+            emptyText: 'No hay normas adoptadas para el filtro seleccionado.',
+            entries: groups.adoptadas,
+            columns: [
+              ['Fecha de registro', entry => entry.row[0]],
+              ['Mes', entry => entry.row[1]],
+              ['Cantidad', entry => entry.row[3]],
+              ['CTN', entry => entry.detail.ctn],
+              ['No. de norma', entry => entry.detail.numero_norma],
+              ['Nombre de la norma', entry => entry.detail.nombre_norma],
+              ['Usuario', entry => entry.detail.usuario || entry.row[13]]
+            ]
+          })}
+
+          ${renderDataSection({
+            title: 'Normas Distribuidas',
+            icon: 'fa-share-nodes',
+            headerClass: 'bg-blue-700',
+            emptyText: 'No hay normas distribuidas para el filtro seleccionado.',
+            entries: groups.distribuidas,
+            columns: [
+              ['Fecha de registro', entry => entry.row[0]],
+              ['Mes', entry => entry.row[1]],
+              ['Fecha', entry => entry.detail.fecha],
+              ['Solicitante', entry => entry.detail.nombre_solicitante],
+              ['Organización', entry => entry.detail.organizacion],
+              ['Cantidad', entry => entry.row[3]],
+              ['CTN', entry => entry.detail.ctn],
+              ['Norma', entry => entry.detail.norma],
+              ['Forma de contacto', entry => entry.detail.forma_contacto],
+              ['Detalle del contacto', entry => entry.detail.detalle_contacto],
+              ['Observaciones', entry => formatObservationForTable(entry.detail)],
+              ['Usuario', entry => entry.detail.usuario || entry.row[13]]
+            ]
+          })}
+
+          ${renderDataSection({
+            title: 'Consultas Técnicas',
+            icon: 'fa-comments',
+            headerClass: 'bg-green-700',
+            emptyText: 'No hay consultas técnicas para el filtro seleccionado.',
+            entries: groups.consultas,
+            columns: [
+              ['Fecha de registro', entry => entry.row[0]],
+              ['Mes', entry => entry.row[1]],
+              ['Cantidad', entry => entry.row[3]],
+              ['Catálogo Norma', entry => entry.detail.catalogo_norma],
+              ['Código AMSE', entry => entry.detail.codigo_amse],
+              ['Área Técnica', entry => entry.detail.area_tecnica],
+              ['Sector', entry => entry.detail.sector],
+              ['Tipo Receptor', entry => entry.detail.tipo_receptor],
+              ['Nombre Sector / Usuario', entry => entry.detail.nombre_sector],
+              ['Contacto', entry => entry.detail.contacto],
+              ['Teléfono', entry => entry.detail.telefono],
+              ['Observaciones', entry => entry.detail.observaciones],
+              ['Usuario', entry => entry.detail.usuario || entry.row[13]]
+            ]
+          })}
+        </div>
+      `;
+    }
+
+    function renderDataSection(config) {
+      const canEdit = COGUANOR_CONFIG.IS_EDITOR === true;
+      const entries = Array.isArray(config.entries) ? config.entries : [];
+      const columns = Array.isArray(config.columns) ? config.columns : [];
+
+      let html = `
+        <section class="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+          <div class="${config.headerClass} px-5 py-4 flex items-center justify-between gap-3">
+            <h4 class="text-white font-bold text-lg">
+              <i class="fas ${config.icon} mr-2"></i>${escapeHtml(config.title)}
+            </h4>
+            <span class="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-semibold">${entries.length}</span>
+          </div>
+      `;
+
+      if (!entries.length) {
+        html += `<div class="px-5 py-8 text-center text-gray-500">${escapeHtml(config.emptyText)}</div></section>`;
+        return html;
+      }
+
+      html += `
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50"><tr>
+      `;
+
+      columns.forEach(column => {
+        html += `<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">${escapeHtml(column[0])}</th>`;
+      });
+
+      if (canEdit) {
+        html += `<th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Acciones</th>`;
+      }
+
+      html += `</tr></thead><tbody class="bg-white divide-y divide-gray-100">`;
+
+      entries.forEach(entry => {
+        html += `<tr class="hover:bg-gray-50">`;
+
+        columns.forEach(column => {
+          const raw = column[1](entry);
+          const text = raw == null || raw === '' ? '-' : String(raw);
+          const view = text.length > 65 ? `${escapeHtml(text.substring(0, 62))}...` : escapeHtml(text);
+          html += `<td class="px-4 py-3 text-sm text-gray-700 align-top" title="${escapeHtml(text)}">${view}</td>`;
+        });
+
+        if (canEdit) {
+          html += `
+            <td class="px-4 py-3 whitespace-nowrap align-top">
+              <div class="flex gap-2">
+                <button type="button" onclick="editRecord(${entry.index})" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-medium">
+                  <i class="fas fa-pen mr-1"></i>Editar
+                </button>
+                <button type="button" onclick="deleteRecord(${entry.absoluteRowIndex || 0})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-medium">
+                  <i class="fas fa-trash mr-1"></i>Eliminar
+                </button>
+              </div>
+            </td>
+          `;
+        }
+
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table></div></section>`;
+      return html;
+    }
+
+    function formatObservationForTable(detail) {
+      const parts = [];
+      if (detail.observaciones) parts.push(detail.observaciones);
+      (detail.campos_adicionales || []).forEach(extra => {
+        const nombre = extra.nombre || extra.campo || extra.key || 'Campo';
+        const valor = extra.valor || extra.value || '';
+        parts.push(`${nombre}: ${valor}`);
+      });
+      return parts.join(' | ');
+    }
+
+    function parseJsonSafe(value, fallback = {}) {
+      if (value && typeof value === 'object') return value;
+
+      try {
+        return JSON.parse(String(value || ''));
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function findHeaderIndex(headers, aliases) {
+      const normalizedAliases = aliases.map(alias =>
+        String(alias || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase()
+      );
+
+      return (headers || []).findIndex(header => {
+        const normalizedHeader = String(header || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toUpperCase();
+
+        return normalizedAliases.includes(normalizedHeader);
+      });
+    }
+
+    function getCellByHeader(row, aliases, fallbackIndex = -1) {
+      const tableData = window.__COGUANOR_TABLE_DATA__ || {};
+      const index = findHeaderIndex(tableData.headers || [], aliases);
+
+      if (index >= 0) return row[index];
+      if (fallbackIndex >= 0) return row[fallbackIndex];
+
+      return '';
+    }
+
+    function getCoguanorDetail(row) {
+      const tipo = String(row && row[2] || '').trim();
+      const detail = {
+        cantidad: row && row[3] || 0,
+        mes: row && row[1] || '',
+        usuario: row && row[13] || ''
+      };
+
+      if (tipo === 'Norma Adoptada' || tipo === 'Norma Elaborada') {
+        detail.ctn = row[4] || '';
+        detail.numero_norma = row[5] || '';
+        detail.nombre_norma = row[6] || '';
+      }
+
+      if (tipo === 'Norma Distribuida') {
+        detail.ctn = row[4] || '';
+        detail.organizacion = row[5] || '';
+        detail.norma = row[6] || '';
+        detail.fecha = normalizeDateInputValue(row[7]);
+
+        const allowedContact = ['Persona', 'Plataforma', 'Correo electrónico', 'Teléfono', 'Otro'];
+        const value8 = String(row[8] || '').trim();
+        const value9 = String(row[9] || '').trim();
+
+        // Estructura nueva: H=fecha, I=forma de contacto, J=solicitante.
+        if (allowedContact.includes(value8)) {
+          detail.forma_contacto = value8;
+          detail.nombre_solicitante = value9;
+          detail.detalle_contacto = value8 === 'Teléfono' ? (row[11] || row[10] || '') : (row[10] || row[11] || '');
+          const parsed = parseStoredObservation(row[12] || '');
+          detail.observaciones = parsed.observaciones;
+          detail.campos_adicionales = parsed.campos_adicionales;
+        } else {
+          // Compatibilidad con filas creadas por la versión anterior:
+          // I=solicitante, J=forma de contacto, K=detalle, L=JSON/observación.
+          detail.nombre_solicitante = value8;
+          detail.forma_contacto = allowedContact.includes(value9) ? value9 : '';
+          detail.detalle_contacto = row[10] || '';
+
+          const legacyJson = parseJsonSafe(row[11], null);
+          if (legacyJson && typeof legacyJson === 'object' && !Array.isArray(legacyJson)) {
+            detail.observaciones = legacyJson.observaciones || '';
+            detail.campos_adicionales = legacyJson.campos_adicionales || [];
+          } else {
+            const parsed = parseStoredObservation(row[12] || row[11] || '');
+            detail.observaciones = parsed.observaciones;
+            detail.campos_adicionales = parsed.campos_adicionales;
+          }
+        }
+      }
+
+      if (tipo === 'Consulta Técnica') {
+        detail.catalogo_norma = row[4] || '';
+        detail.codigo_amse = row[5] || '';
+        detail.area_tecnica = row[6] || '';
+        detail.sector = row[7] || '';
+
+        // Filas nuevas tienen Usuario en N y Observaciones en M.
+        if (row[13] || row[12]) {
+          detail.tipo_receptor = row[8] || '';
+          detail.nombre_sector = row[9] || '';
+          detail.contacto = row[10] || '';
+          detail.telefono = row[11] || '';
+          detail.observaciones = row[12] || '';
+        } else {
+          // Compatibilidad con el desplazamiento de la versión anterior.
+          detail.tipo_receptor = '';
+          detail.nombre_sector = row[8] || '';
+          detail.contacto = row[9] || '';
+          detail.telefono = row[10] || '';
+          detail.observaciones = row[11] || '';
+        }
+      }
+
+      return detail;
+    }
+
+    function normalizeDateInputValue(value) {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      return text.length >= 10 ? text.substring(0, 10) : text;
+    }
+
+    function parseStoredObservation(value) {
+      const text = String(value || '').trim();
+      const marker = '[Campos adicionales]';
+      const markerIndex = text.indexOf(marker);
+
+      if (markerIndex < 0) {
+        return { observaciones: text, campos_adicionales: [] };
+      }
+
+      const observaciones = text.substring(0, markerIndex).trim();
+      const extrasText = text.substring(markerIndex + marker.length).trim();
+      const campos_adicionales = extrasText
+        .split(/\r?\n/)
+        .map(line => line.replace(/^[-•]\s*/, '').trim())
+        .filter(Boolean)
+        .map(line => {
+          const separatorIndex = line.indexOf(':');
+          if (separatorIndex < 0) return { nombre: line, valor: '' };
+          return {
+            nombre: line.substring(0, separatorIndex).trim(),
+            valor: line.substring(separatorIndex + 1).trim()
+          };
+        });
+
+      return { observaciones, campos_adicionales };
+    }
+
+    function setCatalogValue(select, value) {
+      select.dataset.value = value || '';
+      initCatalogSelectors(select.closest('.elaborada-item, .distribuida-item, .consulta-item') || document);
+    }
+
+    function populateExtraFields(item, extras) {
+      const container = item.querySelector('.extra-fields-container');
+      if (!container) return;
+
+      const rows = container.querySelectorAll('.extra-field-row');
+      rows.forEach((row, index) => { if (index > 0) row.remove(); });
+
+      const normalized = Array.isArray(extras) && extras.length
+        ? extras
+        : [{ nombre: '', valor: '' }];
+
+      normalized.forEach((extra, index) => {
+        let row = container.querySelectorAll('.extra-field-row')[index];
+
+        if (!row) {
+          row = container.querySelector('.extra-field-row').cloneNode(true);
+          container.appendChild(row);
+        }
+
+        row.querySelector('input[name="extra_key_distribuidas[]"]').value =
+          extra.nombre || extra.campo || extra.key || '';
+
+        row.querySelector('input[name="extra_value_distribuidas[]"]').value =
+          extra.valor || extra.value || '';
+      });
+    }
+
+    function editRecord(index) {
+      const tableData = window.__COGUANOR_TABLE_DATA__;
+      if (!tableData || !tableData.rows || !tableData.rows[index]) return;
+
+      const row = tableData.rows[index];
+      const absoluteRowIndex = Array.isArray(tableData.rowIndexes)
+        ? tableData.rowIndexes[index]
+        : null;
+
+      if (!absoluteRowIndex) {
+        showNotification('No se encontró la fila real del registro', 'error');
+        return;
+      }
+
+      const tipo = String(row[2] || '').trim();
+      const detail = getCoguanorDetail(row);
+
+      const generalMonthSelect = document.querySelector('#general-form select[name="mes"]');
+      if (generalMonthSelect && row[1]) generalMonthSelect.value = row[1];
+
+      if (tipo === 'Norma Adoptada' || tipo === 'Norma Elaborada') {
+        resetSection('elaboradas');
+
+        const item = document.querySelector('.elaborada-item');
+        item.querySelector('input[name="numero_norma_adoptadas[]"]').value =
+          detail.numero_norma || detail.codigo_amse || detail.numero || '';
+
+        item.querySelector('input[name="nombre_norma_adoptadas[]"]').value =
+          detail.nombre_norma || detail.norma || detail.area_tecnica || row[4] || '';
+
+        item.querySelector('input[name="cantidad_adoptadas[]"]').value =
+          detail.cantidad || row[3] || 1;
+
+        item.querySelector('select[name="mes_adoptadas[]"]').value =
+          detail.mes || row[1] || '';
+
+        const ctnSelect = item.querySelector('select[name="ctn_adoptadas[]"]');
+        setCatalogValue(ctnSelect, detail.ctn || detail.catalogo_norma || row[4] || '');
+
+        beginEdit('elaboradas', absoluteRowIndex);
+        switchTab('elaboradas');
+      }
+
+      if (tipo === 'Norma Distribuida') {
+        resetSection('distribuidas');
+
+        const item = document.querySelector('.distribuida-item');
+        item.querySelector('input[name="fecha_distribuidas[]"]').value =
+          detail.fecha || '';
+
+        item.querySelector('input[name="nombre_solicitante_distribuidas[]"]').value =
+          detail.nombre_solicitante || detail.nombre_sector || row[4] || '';
+
+        item.querySelector('input[name="organizacion_distribuidas[]"]').value =
+          detail.organizacion || detail.codigo_amse || '';
+
+        item.querySelector('input[name="cantidad_distribuidas[]"]').value =
+          detail.cantidad || row[3] || 1;
+
+        item.querySelector('input[name="norma_distribuidas[]"]').value =
+          detail.norma || detail.area_tecnica || '';
+
+        const formaContacto =
+          detail.forma_contacto ||
+          (detail.telefono ? 'Teléfono' : '') ||
+          (detail.contacto ? 'Persona' : '') ||
+          row[5] ||
+          '';
+
+        const formaSelect = item.querySelector('select[name="forma_contacto_distribuidas[]"]');
+        const allowedContact = ['Persona', 'Plataforma', 'Correo electrónico', 'Teléfono', 'Otro'];
+        formaSelect.value = allowedContact.includes(formaContacto) ? formaContacto : (formaContacto ? 'Otro' : '');
+
+        item.querySelector('input[name="detalle_contacto_distribuidas[]"]').value =
+          detail.detalle_contacto || detail.telefono || detail.contacto || (allowedContact.includes(formaContacto) ? '' : formaContacto);
+
+        item.querySelector('textarea[name="observaciones_distribuidas[]"]').value =
+          detail.observaciones || '';
+
+        const ctnSelect = item.querySelector('select[name="ctn_distribuidas[]"]');
+        setCatalogValue(ctnSelect, detail.ctn || detail.catalogo_norma || '');
+
+        populateExtraFields(item, detail.campos_adicionales || detail.campos || []);
+
+        beginEdit('distribuidas', absoluteRowIndex);
+        switchTab('distribuidas');
+      }
+
+      if (tipo === 'Consulta Técnica') {
+        resetSection('consultas');
+
+        const item = document.querySelector('.consulta-item');
+        item.querySelector('select[name="sector_consultas[]"]').value =
+          detail.sector || '';
+
+        const tipoReceptorSelect = item.querySelector('select[name="tipo_receptor_consultas[]"]');
+        const allowedReceptors = ['Institución', 'Usuario consumidor', 'Persona individual', 'Otro'];
+        tipoReceptorSelect.value = allowedReceptors.includes(detail.tipo_receptor)
+          ? detail.tipo_receptor
+          : (detail.tipo_receptor ? 'Otro' : '');
+
+        item.querySelector('input[name="nombre_sector_consultas[]"]').value =
+          detail.nombre_sector || detail.nombre_solicitante || row[4] || '';
+
+        item.querySelector('input[name="cantidad_consultas[]"]').value =
+          detail.cantidad || row[3] || '';
+
+        item.querySelector('input[name="codigo_amse_consultas[]"]').value =
+          detail.codigo_amse || '';
+
+        item.querySelector('input[name="area_tecnica_consultas[]"]').value =
+          detail.area_tecnica || detail.norma || '';
+
+        item.querySelector('input[name="contacto_consultas[]"]').value =
+          detail.contacto || '';
+
+        item.querySelector('input[name="telefono_consultas[]"]').value =
+          detail.telefono || '';
+
+        item.querySelector('textarea[name="observaciones_consultas[]"]').value =
+          detail.observaciones || '';
+
+        const catalogoSelect = item.querySelector('select[name="catalogo_norma_consultas[]"]');
+        setCatalogValue(catalogoSelect, detail.catalogo_norma || detail.ctn || '');
+
+        beginEdit('consultas', absoluteRowIndex);
+        switchTab('consultas');
+      }
+
+      recalcTotals();
+    }
+
+    async function deleteRecord(absoluteRowIndex) {
+      if (!absoluteRowIndex) {
+        showNotification('No se encontró la fila real para eliminar', 'error');
+        return;
+      }
+
+      const ok = confirm(`Se eliminará la fila real ${absoluteRowIndex}. ¿Desea continuar?`);
+      if (!ok) return;
+
+      try {
+        const result = await callAPI('DELETE_INDICATOR', {
+          department: 'COGUANOR',
+          absoluteRowIndex
+        });
+
+        if (result && result.success) {
+          showNotification(result.message || 'Registro eliminado', 'success');
+          loadStats();
+          loadDashboardData();
+        } else {
+          showNotification(result?.message || 'No se pudo eliminar', 'error');
+        }
+      } catch (error) {
+        showNotification(error.message || 'Error eliminando registro', 'error');
+      }
+    }
+
+    function recalcTotals() {
+      let totalElaboradas = 0;
+      document.querySelectorAll('.sum-elaboradas').forEach(input => totalElaboradas += parseInt(input.value) || 0);
+      document.getElementById('total-elaboradas').textContent = totalElaboradas;
+
+      let totalDistribuidas = 0;
+      document.querySelectorAll('.sum-distribuidas').forEach(input => totalDistribuidas += parseInt(input.value) || 0);
+      document.getElementById('total-distribuidas').textContent = totalDistribuidas;
+
+      let totalConsultas = 0;
+      document.querySelectorAll('.sum-consultas').forEach(input => totalConsultas += parseInt(input.value) || 0);
+      document.getElementById('total-consultas').textContent = totalConsultas;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const authPayload = getAuthPayload();
+      if (!authPayload) {
+        redirectToLoginLocal('No hay sesión activa para COGUANOR.');
+        return;
+      }
+
+      COGUANOR_CONFIG.USER = getAuthUser();
+      COGUANOR_CONFIG.IS_EDITOR =
+        COGUANOR_CONFIG.USER.role === 'Administrador' ||
+        COGUANOR_CONFIG.USER.role === 'Jefe' ||
+        COGUANOR_CONFIG.USER.department === 'COGUANOR';
+
+      const userNameElement = document.getElementById('user-name');
+      if (userNameElement) userNameElement.textContent = COGUANOR_CONFIG.USER.name || 'Usuario COGUANOR';
+
+      const roleElement = document.getElementById('user-role');
+      if (roleElement) roleElement.textContent = COGUANOR_CONFIG.USER.role || 'Usuario';
+
+      initCatalogSelectors(document);
+
+      document.getElementById('elaboradas-form').addEventListener('submit', e => {
+        e.preventDefault();
+        submitForm('elaboradas');
+      });
+
+      document.getElementById('distribuidas-form').addEventListener('submit', e => {
+        e.preventDefault();
+        submitForm('distribuidas');
+      });
+
+      document.getElementById('consultas-form').addEventListener('submit', e => {
+        e.preventDefault();
+        submitForm('consultas');
+      });
+
+      document.addEventListener('input', recalcTotals);
+      document.getElementById('filtro-mes-datos').addEventListener('change', loadDashboardData);
+
+      const generalMonthSelect = document.querySelector('#general-form select[name="mes"]');
+      generalMonthSelect.addEventListener('change', () => {
+        document.querySelectorAll('.mes-adoptada').forEach(select => {
+          if (!select.value) select.value = generalMonthSelect.value;
+        });
+      });
+
+      loadStats();
+      recalcTotals();
+    });
+  </script>
+</body>
+</html>

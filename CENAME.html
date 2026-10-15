@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CENAME - Importador y Gestor</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --line: #dbe4ee;
+      --primary: #0f766e;
+      --primary-2: #0ea5a6;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #059669;
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; color: var(--text); background: var(--bg); }
+    body { min-height: 100vh; }
+    .shell { max-width: 1460px; margin: 0 auto; padding: 0 20px 40px; }
+
+    /* ── TOPBAR ── */
+    .topbar { background: linear-gradient(135deg, #0f766e 0%, #0ea5a6 60%, #2563eb 100%); color: #fff; box-shadow: var(--shadow); }
+    .topbar-inner { max-width: 1460px; margin: 0 auto; padding: 22px 20px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-badge { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: rgba(255,255,255,.18); font-size: 26px; }
+    .brand h1 { margin: 0; font-size: 26px; }
+    .brand p  { margin: 4px 0 0; opacity: .9; font-size: 13px; }
+    .userbox  { text-align: right; font-size: 13px; }
+    .userbox strong { display: block; font-size: 15px; margin-top: 3px; }
+
+    /* ── LOGOUT ── */
+    .btn-logout {
+      border: 1px solid rgba(255,255,255,.45);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border-radius: 14px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background .2s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,.24); }
+
+    /* Modal de confirmacion de cierre de sesion */
+    .logout-modal { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: none; align-items: center; justify-content: center; z-index: 1300; padding: 20px; }
+    .logout-modal.show { display: flex; }
+    .logout-card { background: #fff; border-radius: 22px; max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(15,23,42,.18); padding: 32px 28px; text-align: center; }
+    .logout-card .logout-icon { font-size: 44px; margin-bottom: 12px; }
+    .logout-card h3 { margin: 0 0 8px; font-size: 20px; color: var(--text); }
+    .logout-card p  { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+    .logout-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ── NAV ── */
+    .nav { margin: 18px 0 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--line); background: #fff; color: #334155; padding: 12px 18px; border-radius: 999px; cursor: pointer; font-weight: 700; transition: .2s; }
+    .tab.active { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; border-color: transparent; }
+
+    /* ── PANES ── */
+    .pane { display: none; }
+    .pane.live { display: block; }
+
+    /* ── STATS ── */
+    .grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .stat { padding: 18px; }
+    .stat .label { color: var(--muted); font-size: 13px; }
+    .stat .value { font-size: 30px; font-weight: 800; margin-top: 8px; }
+
+    /* ── SECTION ── */
+    .section-head { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .section-head h2 { margin: 0; font-size: 19px; }
+    .section-head p  { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .section-body { padding: 20px; }
+
+    .banner { padding: 15px 16px; border-radius: 14px; background: #f8fafc; border: 1px solid var(--line); color: #334155; font-size: 14px; line-height: 1.7; }
+
+    /* ── LAYOUT ── */
+    .twocol  { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+
+    /* ── DROPZONE ── */
+    .dropzone { border: 2px dashed #b6c7da; border-radius: 18px; background: linear-gradient(180deg,#f8fffe,#f4f7fb); padding: 38px 18px; text-align: center; transition: .2s; cursor: pointer; }
+    .dropzone.dragover { border-color: var(--primary); background: #ecfffb; transform: translateY(-2px); }
+    .dropzone .icon { font-size: 44px; margin-bottom: 10px; }
+    .dropzone strong { display: block; font-size: 18px; }
+    .muted { color: var(--muted); }
+
+    /* ── FORM ── */
+    .form-grid   { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+    .filter-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 700; margin: 0 0 8px; }
+    .input, .select, .textarea { width: 100%; border: 1px solid #c8d6e5; border-radius: 14px; background: #fff; padding: 12px 14px; font-size: 14px; color: var(--text); }
+    .textarea { min-height: 90px; resize: vertical; }
+    .input:focus, .select:focus, .textarea:focus { outline: 2px solid rgba(14,165,166,.2); border-color: var(--primary-2); }
+
+    /* ── BUTTONS ── */
+    .actions   { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn       { border: 0; border-radius: 14px; padding: 12px 16px; font-weight: 800; cursor: pointer; transition: .2s; font-size: 14px; }
+    .btn-primary   { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; }
+    .btn-secondary { background: #e2e8f0; color: #0f172a; }
+    .btn-danger    { background: var(--danger); color: #fff; }
+    .btn-light     { background: #fff; color: #0f172a; border: 1px solid var(--line); }
+    .btn:disabled  { opacity: .6; cursor: not-allowed; }
+    .btn:hover:not(:disabled) { filter: brightness(1.07); }
+
+    /* ── RESULT GRID ── */
+    .result-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; }
+    .mini { border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 14px; }
+    .mini .k { font-size: 12px; color: var(--muted); }
+    .mini .v { margin-top: 6px; font-size: 22px; font-weight: 800; }
+
+    /* ── TABLES ── */
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    thead { background: #f8fafc; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: top; }
+    tbody tr:hover { background: #f0f9ff; }
+    .right  { text-align: right; }
+    .center { text-align: center; }
+    .mono   { font-family: Consolas, monospace; font-size: 12px; }
+
+    /* ── CHIPS ── */
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: #eff6ff; color: #1d4ed8; }
+    .chip.ok   { background: #ecfdf5; color: #047857; }
+    .chip.warn { background: #fff7ed; color: #c2410c; }
+    .chip.err  { background: #fef2f2; color: #b91c1c; }
+
+    /* ── TOOLBAR ── */
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* ── OVERLAY ── */
+    .overlay { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .overlay.show { display: flex; }
+    .overlay-card { background: #fff; border-radius: 22px; max-width: 420px; width: 100%; box-shadow: var(--shadow); padding: 26px; text-align: center; }
+    .spinner { width: 56px; height: 56px; border-radius: 50%; border: 6px solid #dbeafe; border-top-color: var(--primary-2); margin: 0 auto 16px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOASTS ── */
+    .toast-wrap { position: fixed; top: 18px; right: 18px; z-index: 1200; display: flex; flex-direction: column; gap: 10px; }
+    .toast { min-width: 280px; max-width: 420px; background: #fff; border-left: 5px solid var(--primary); box-shadow: var(--shadow); padding: 14px 16px; border-radius: 14px; font-size: 14px; }
+    .toast.err  { border-left-color: var(--danger); }
+    .toast.warn { border-left-color: var(--warning); }
+    .toast.ok   { border-left-color: var(--success); }
+
+    /* ── MODAL ── */
+    .modal { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; z-index: 1100; padding: 18px; }
+    .modal.show { display: flex; }
+    .modal-card { width: min(1040px,100%); max-height: 92vh; overflow: auto; background: #fff; border-radius: 22px; box-shadow: var(--shadow); }
+    .modal-head { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .modal-body { padding: 20px; }
+
+    .empty { padding: 30px; text-align: center; color: var(--muted); }
+
+
+    /* ── SELECTOR DE ENTORNOS ── */
+    .environment-stage {
+      position: relative;
+      overflow: hidden;
+      margin: 20px 0 24px;
+      padding: 20px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(14,165,166,.16), transparent 34%),
+        radial-gradient(circle at 90% 15%, rgba(37,99,235,.14), transparent 32%),
+        linear-gradient(145deg,#ffffff,#f1f7fb);
+      border: 1px solid rgba(148,163,184,.35);
+      box-shadow: 0 18px 50px rgba(15,23,42,.08);
+    }
+    .environment-stage::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(14,165,166,.18), rgba(37,99,235,.08), rgba(14,165,166,.18));
+      filter: blur(34px);
+      top: -150px;
+      left: 35%;
+      animation: envOrbit 11s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes envOrbit {
+      to { transform: rotate(360deg) translateX(22px); }
+    }
+    .environment-heading {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .environment-heading h2 { margin: 0; font-size: 20px; }
+    .environment-heading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .environment-selected {
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(15,118,110,.09);
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .environment-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 14px;
+    }
+    .environment-card {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      min-height: 145px;
+      border: 1px solid rgba(148,163,184,.42);
+      border-radius: 22px;
+      padding: 18px;
+      text-align: left;
+      background: rgba(255,255,255,.88);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+    .environment-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -35% -70% -35%;
+      height: 140px;
+      z-index: -1;
+      border-radius: 50%;
+      background: linear-gradient(90deg,rgba(14,165,166,.16),rgba(37,99,235,.16));
+      filter: blur(18px);
+      opacity: 0;
+      transition: opacity .25s;
+    }
+    .environment-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 35px rgba(15,23,42,.12);
+    }
+    .environment-card.active {
+      border-color: var(--primary-2);
+      box-shadow:
+        0 0 0 3px rgba(14,165,166,.12),
+        0 18px 42px rgba(14,165,166,.16);
+      transform: translateY(-3px);
+    }
+    .environment-card.active::after { opacity: 1; animation: envPulse 2.8s ease-in-out infinite; }
+    @keyframes envPulse {
+      0%,100% { transform: scale(.88); opacity: .55; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+    .environment-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg,#ecfeff,#dbeafe);
+      font-size: 25px;
+      margin-bottom: 12px;
+    }
+    .environment-card strong { display: block; font-size: 16px; }
+    .environment-card small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .environment-count {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      min-width: 34px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #e6fffb;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+    }
+    .env-fields-title {
+      grid-column: 1 / -1;
+      margin: 4px 0 -2px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .env-field.is-hidden { display: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) {
+      .grid-stats, .result-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .twocol { grid-template-columns: 1fr; }
+      .form-grid, .filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 760px) {
+      .grid-stats, .result-grid, .form-grid, .filter-grid, .environment-grid { grid-template-columns: 1fr; }
+      .topbar-inner { padding: 20px 16px; }
+      .shell { padding: 0 16px 30px; }
+      .userbox { text-align: left; }
+    }
+    /* Ajustes responsivos de tablas y formularios PNCal */
+  .table-container, .table-scroll {overflow-x:auto;max-width:100%}
+  table {border-collapse:separate;border-spacing:0}
+  th {position:sticky;top:0;z-index:1}
+  td {vertical-align:middle;overflow-wrap:anywhere}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+  @media(max-width:640px){.card,.panel{max-width:100%}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ TOPBAR ═══════════════════════ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">&#128202;</div>
+      <div>
+        <h1>CENAME &middot; Importador y Gestor</h1>
+        <p>Procesamiento automatico de Excel, deduplicacion, historial y mantenimiento manual.</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="userbox">
+        <div>Usuario activo</div>
+        <strong id="pncx-user">-</strong>
+      </div>
+      <button class="btn btn-light"    id="pncx-refresh-btn">Actualizar</button>
+      <button class="btn btn-primary"  id="pncx-new-btn">Nuevo registro</button>
+      <button class="btn-logout"       id="pncx-logout-btn">&#128274; Cerrar sesion</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════ SHELL ═══════════════════════ -->
+<div class="shell">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="tab active" data-pane="pane-resumen">Resumen</button>
+    <button class="tab"        data-pane="pane-carga">Carga Excel</button>
+    <button class="tab"        data-pane="pane-historial">Historial</button>
+    <button class="tab"        data-pane="pane-registros">Registros</button>
+  </nav>
+
+  <!-- SELECTOR EXCLUSIVO DE ENTORNO -->
+  <section class="environment-stage" aria-label="Selector de entorno CENAME">
+    <div class="environment-heading">
+      <div>
+        <h2>Selecciona el entorno de información</h2>
+        <p>Los registros se consultan por separado; nunca se mezclan los tres conjuntos.</p>
+      </div>
+      <div class="environment-selected" id="environment-selected-label">Dispensadores de gasolina</div>
+    </div>
+
+    <div class="environment-grid">
+      <button type="button" class="environment-card active" data-environment="DISPENSADORES_GASOLINA">
+        <span class="environment-count" id="env-count-DISPENSADORES_GASOLINA">0</span>
+        <span class="environment-icon">⛽</span>
+        <strong>Dispensadores de gasolina</strong>
+        <small>Estaciones, verificaciones, combustibles, inmovilizaciones y clientes.</small>
+      </button>
+
+      <button type="button" class="environment-card" data-environment="PRODUCTO_PREEMPACADO">
+        <span class="environment-count" id="env-count-PRODUCTO_PREEMPACADO">0</span>
+        <span class="environment-icon">📦</span>
+        <strong>Producto preempacado</strong>
+        <small>Productos, lotes, unidades verificadas, informes y población beneficiada.</small>
+      </button>
+
+      <button type="button" class="environment-card" data-environment="INSTRUMENTOS_CALIBRADOS">
+        <span class="environment-count" id="env-count-INSTRUMENTOS_CALIBRADOS">0</span>
+        <span class="environment-icon">⚙️</span>
+        <strong>Instrumentos calibrados</strong>
+        <small>Calibraciones, certificados, informes e instrumentos atendidos.</small>
+      </button>
+    </div>
+  </section>
+
+  <!-- ══════════ PANE: RESUMEN ══════════ -->
+  <section id="pane-resumen" class="pane live">
+    <div class="grid-stats">
+      <div class="card stat"><div class="label">Cargas registradas</div>    <div class="value" id="st-cargas">0</div></div>
+      <div class="card stat"><div class="label">Registros normalizados</div><div class="value" id="st-registros">0</div></div>
+      <div class="card stat"><div class="label">Calibraciones</div>         <div class="value" id="st-calibraciones">0</div></div>
+      <div class="card stat"><div class="label">Verificaciones</div>        <div class="value" id="st-verificaciones">0</div></div>
+      <div class="card stat"><div class="label">Huella economica</div>      <div class="value" id="st-huella">Q0.00</div></div>
+      <div class="card stat"><div class="label">Poblacion</div>             <div class="value" id="st-poblacion">0</div></div>
+      <div class="card stat"><div class="label">Duplicados</div>            <div class="value" id="st-duplicados">0</div></div>
+      <div class="card stat"><div class="label">Omitidos</div>              <div class="value" id="st-omitidos">0</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head">
+        <div>
+          <h2>Estado del modulo</h2>
+          <p id="pncx-banner">Listo para consultar el tablero.</p>
+        </div>
+        <div id="pncx-last-load"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head">
+        <div>
+          <h2>Resumen mensual consolidado</h2>
+          <p>Metricas agrupadas por periodo y categoria.</p>
+        </div>
+      </div>
+      <div class="section-body table-wrap" id="wrap-summary"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ PANE: CARGA ══════════ -->
+  <section id="pane-carga" class="pane">
+    <div class="twocol">
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <h2>Cargar archivo Excel</h2>
+            <p>Arrastra o selecciona el archivo. El procesamiento iniciara automaticamente sin presionar botones.</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
+            <div class="icon">&#128228;</div>
+            <strong>Haz clic o arrastra el archivo aqui</strong>
+            <div class="muted" style="margin-top:8px;">Formatos permitidos: .xlsx y .xls</div>
+          </label>
+
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="field">
+              <label>Departamento</label>
+              <select class="select" id="depto-input"><option value="CENAME">CENAME</option></select>
+            </div>
+            <div class="field">
+              <label>Año de referencia</label>
+              <input class="input" id="year-input" type="number" min="2020" max="2100" value="2026">
+            </div>
+            <div class="field">
+              <label>Archivo seleccionado</label>
+              <input class="input" id="file-name" value="Ningun archivo seleccionado" readonly>
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top:16px;">
+            <button class="btn btn-secondary" id="clear-btn">Limpiar seleccion</button>
+            <span class="chip ok">Procesamiento automatico activo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <h2>Flujo del proceso</h2>
+            <p>Que valida y que guarda el sistema.</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="banner">
+            <b>1.</b> Convierte el Excel a hoja temporal en Drive.<br>
+            <b>2.</b> Detecta encabezados y omite pivots, vacios y totales.<br>
+            <b>3.</b> Clasifica cada fila en gasolina, preempacados o instrumentos calibrados.<br>
+            <b>4.</b> Construye una clave unica estable y descarta duplicados historicos o del mismo archivo.<br>
+            <b>5.</b> Guarda solamente registros nuevos, historial, bitacora y resumen mensual separado.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head">
+        <div>
+          <h2>Resultado del ultimo procesamiento</h2>
+          <p>Conteo exacto de filas procesadas.</p>
+        </div>
+      </div>
+      <div class="section-body" id="wrap-import-result">
+        <div class="empty">Aun no se ha procesado ningun archivo en esta sesion.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ PANE: HISTORIAL ══════════ -->
+  <section id="pane-historial" class="pane">
+    <div class="card">
+      <div class="section-head">
+        <div><h2>Historial de cargas</h2><p>Con timestamp, duracion y conteos completos.</p></div>
+        <button class="btn btn-danger" id="dedupe-btn">Diagnosticar posibles duplicados</button>
+      </div>
+      <div class="section-body table-wrap" id="wrap-loads"></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head">
+        <div><h2>Bitacora de debug</h2><p>Eventos recientes del procesamiento y CRUD.</p></div>
+      </div>
+      <div class="section-body table-wrap" id="wrap-debug"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ PANE: REGISTROS ══════════ -->
+  <section id="pane-registros" class="pane">
+    <div class="card">
+      <div class="section-head">
+        <div><h2>Consulta de registros</h2><p>Filtra, revisa, corrige y elimina registros.</p></div>
+      </div>
+      <div class="section-body">
+        <div class="filter-grid">
+          <div class="field"><label>Año</label><input class="input" id="filter-year" type="number" placeholder="2026"></div>
+          <div class="field"><label>Mes</label>
+            <select class="select" id="filter-month">
+              <option value="">Todos</option>
+              <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+              <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+              <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+          <div class="field"><label>Entorno seleccionado</label>
+            <input class="input" id="filter-environment-label" value="Dispensadores de gasolina" readonly>
+          </div>
+          <div class="field"><label>Texto</label><input class="input" id="filter-text" placeholder="archivo, sector, categoria..."></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" id="apply-filter-btn">Aplicar filtros</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head">
+        <div><h2>Registros normalizados</h2><p>Ver, editar y eliminar registros individuales.</p></div>
+        <button class="btn btn-primary" id="new-from-table-btn">Nuevo registro</button>
+      </div>
+      <div class="section-body table-wrap" id="wrap-records"></div>
+    </div>
+  </section>
+
+</div><!-- /shell -->
+
+<!-- ═══════════════════════ OVERLAY ═══════════════════════ -->
+<div class="overlay" id="loading-overlay">
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <h3 id="loading-title" style="margin:0 0 8px;">Procesando...</h3>
+    <div class="muted" id="loading-text">Por favor espera.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOASTS ═══════════════════════ -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ═══════════════════════ MODAL CRUD ═══════════════════════ -->
+<div class="modal" id="record-modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <strong id="modal-title">Registro</strong>
+        <div class="muted" id="modal-subtitle">Formulario de mantenimiento</div>
+      </div>
+      <button class="btn btn-secondary" id="modal-close-btn">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div id="record-form">
+        <input type="hidden" id="f-idRegistro">
+        <div class="form-grid">
+          <div class="field"><label>Fecha operacion</label>        <input class="input" id="f-fechaOperacion" type="date"></div>
+          <div class="field"><label>Año</label>                    <input class="input" id="f-anio" type="number"></div>
+          <div class="field"><label>Mes</label>                    <input class="input" id="f-mes" type="number" min="1" max="12"></div>
+          <div class="field"><label>Entorno</label>
+            <select class="select" id="f-entorno">
+              <option value="DISPENSADORES_GASOLINA">Dispensadores de gasolina</option>
+              <option value="PRODUCTO_PREEMPACADO">Producto preempacado</option>
+              <option value="INSTRUMENTOS_CALIBRADOS">Instrumentos calibrados</option>
+            </select>
+          </div>
+          <div class="field"><label>Subcategoria</label>           <input class="input" id="f-subcategoria"></div>
+          <div class="field"><label>Sector</label>                 <input class="input" id="f-sector"></div>
+          <div class="field"><label>Departamento operativo</label> <input class="input" id="f-departamentoOperativo" value="CENAME"></div>
+          <div class="field env-field env-gas"><label>Municipio</label><input class="input" id="f-municipio"></div>
+
+          <div class="env-fields-title">Métricas del entorno seleccionado</div>
+          <div class="field env-field env-cal"><label>Calibraciones</label><input class="input" id="f-calibraciones" type="number" step="any" value="0"></div>
+          <div class="field env-field env-cal"><label>Certificados</label>           <input class="input" id="f-certificados"  type="number" step="any" value="0"></div>
+          <div class="field env-field env-cal env-pre"><label>Informes</label>               <input class="input" id="f-informes"      type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Estaciones</label>             <input class="input" id="f-estaciones"    type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Dispensadores</label>          <input class="input" id="f-dispensadores" type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas env-pre"><label>Productos</label>              <input class="input" id="f-productos"     type="number" step="any" value="0"></div>
+          <div class="field env-field env-pre"><label>Unidades</label>               <input class="input" id="f-unidades"      type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Verificaciones</label>          <input class="input" id="f-verificaciones" type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Inmovilizaciones</label>        <input class="input" id="f-inmovilizaciones" type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Clientes del mes</label>        <input class="input" id="f-clientesMes" type="number" step="any" value="0"></div>
+          <div class="field env-field env-gas"><label>Productos / combustibles</label><input class="input" id="f-productosDetalle" placeholder="Diesel, Regular, Superior"></div>
+          <div class="field"><label>Poblacion</label>              <input class="input" id="f-poblacion"     type="number" step="any" value="0"></div>
+          <div class="field"><label>Huella economica</label>       <input class="input" id="f-huella"        type="number" step="any" value="0"></div>
+          <div class="field"><label>Archivo</label>                <input class="input" id="f-archivo" value="MANUAL"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Observaciones</label>
+          <textarea class="textarea" id="f-observaciones"></textarea>
+        </div>
+        <div class="actions" style="margin-top:16px;">
+          <button type="button" class="btn btn-primary"   id="save-record-btn">Guardar registro</button>
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancelar</button>
+          <button type="button" class="btn btn-danger"    id="modal-delete-btn" style="display:none;">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MODAL LOGOUT ═══════════════════════ -->
+<div class="logout-modal" id="logout-modal">
+  <div class="logout-card">
+    <div class="logout-icon">&#128274;</div>
+    <h3>Cerrar sesion</h3>
+    <p>Estas seguro que deseas cerrar tu sesion actual en el modulo CENAME?</p>
+    <div class="logout-actions">
+      <button class="btn btn-secondary" id="logout-cancel-btn">Cancelar</button>
+      <button class="btn btn-danger"    id="logout-confirm-btn">Cerrar sesion</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SCRIPT ═══════════════════════ -->
+<script>
+  /* ── CONFIG ─────────────────────────────────────────── */
+  function pncxReadAuthPayload() {
+    try {
+      return sessionStorage.getItem('dsnc_auth') ||
+             localStorage.getItem('dsnc_auth') ||
+             '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function pncxReadAuthUser() {
+    try {
+      const raw = pncxReadAuthPayload();
+      if (!raw) return {};
+      const auth = JSON.parse(raw);
+      return auth.user || auth || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function pncxGoLogin() {
+    try {
+      sessionStorage.removeItem('dsnc_auth');
+      localStorage.removeItem('dsnc_auth');
+      sessionStorage.removeItem('dsnc_active');
+    } catch (e) {}
+
+    const url = PNCX.appUrl ? PNCX.appUrl + '?page=login' : '?page=login';
+    window.location.href = url;
+  }
+
+  const PNCX = {
+    /*
+     * MODO SIN TOKEN:
+     * sessionToken ahora es el JSON de credenciales guardado por login.html.
+     * Code.gs validateSession() ya interpreta este valor y valida contra la hoja Usuario.
+     */
+    sessionToken: pncxReadAuthPayload(),
+    appUrl:       <?!= JSON.stringify(appUrl || '') ?>,
+    user:         pncxReadAuthUser(),
+    board:        null,
+    importResult: null,
+    selectedEnvironment: 'DISPENSADORES_GASOLINA'
+  };
+
+  const SERVER_MAP = {
+    estado:      'pncxCenameEstado',
+    diagnostico: 'pncxCenameDiagnostico',
+    importar:    'pncxCenameImportar',
+    obtener:     'pncxCenameObtenerRegistro',
+    guardar:     'pncxCenameGuardarRegistro',
+    eliminar:    'pncxCenameEliminarRegistro',
+    depurar:     'pncxCenameDepurarDuplicados',
+    init:        'pncxCenameInicializar'
+  };
+
+  /* ── UTILS ───────────────────────────────────────────── */
+  const qs  = id => document.getElementById(id);
+  const esc = v  => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const num = v  => Number(v || 0);
+  const intFmt = v => num(v).toLocaleString('es-GT');
+  const money  = v => new Intl.NumberFormat('es-GT',{style:'currency',currency:'GTQ',minimumFractionDigits:2}).format(num(v));
+
+  const ENVIRONMENTS = {
+    DISPENSADORES_GASOLINA: {
+      label: 'Dispensadores de gasolina',
+      short: 'Gasolina',
+      className: 'env-gas'
+    },
+    PRODUCTO_PREEMPACADO: {
+      label: 'Producto preempacado',
+      short: 'Preempacado',
+      className: 'env-pre'
+    },
+    INSTRUMENTOS_CALIBRADOS: {
+      label: 'Instrumentos calibrados',
+      short: 'Calibrados',
+      className: 'env-cal'
+    }
+  };
+
+  function environmentLabel(id) {
+    return ENVIRONMENTS[id] ? ENVIRONMENTS[id].label : 'Sin clasificar';
+  }
+
+  function fmtDateTime(v) {
+    if (!v) return '-';
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? String(v) : d.toLocaleString('es-GT');
+  }
+  function fmtDate(v) {
+    if (!v) return '-';
+    // Si ya es yyyy-mm-dd lo parseamos explicitamente para evitar desfase de timezone
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      const [y, m, d2] = v.split('-').map(Number);
+      return new Date(y, m-1, d2).toLocaleDateString('es-GT');
+    }
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('es-GT');
+  }
+
+  function setBusy(show, title, text) {
+    qs('loading-title').textContent = title || 'Procesando...';
+    qs('loading-text').textContent  = text  || 'Por favor espera.';
+    qs('loading-overlay').classList.toggle('show', !!show);
+  }
+
+  function toast(message, kind) {
+    const wrap = qs('toast-wrap');
+    const div  = document.createElement('div');
+    div.className   = 'toast ' + (kind || 'ok');
+    div.textContent = message;
+    wrap.appendChild(div);
+    setTimeout(() => div.remove(), 5000);
+  }
+
+  function switchPane(id) {
+    document.querySelectorAll('.pane').forEach(el => el.classList.remove('live'));
+    document.querySelectorAll('.tab') .forEach(el => el.classList.remove('active'));
+    const pane = qs(id);
+    if (pane) pane.classList.add('live');
+    const tab  = document.querySelector('.tab[data-pane="' + id + '"]');
+    if (tab) tab.classList.add('active');
+  }
+
+  function setSelectedEnvironment(environment, refresh) {
+    if (!ENVIRONMENTS[environment]) return;
+    PNCX.selectedEnvironment = environment;
+
+    document.querySelectorAll('.environment-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.environment === environment);
+    });
+
+    qs('environment-selected-label').textContent = environmentLabel(environment);
+    qs('filter-environment-label').value = environmentLabel(environment);
+
+    if (refresh !== false) refreshBoard();
+  }
+
+  function paintEnvironmentStats(stats) {
+    const source = stats || {};
+    Object.keys(ENVIRONMENTS).forEach(id => {
+      const target = qs('env-count-' + id);
+      const value = source[id] && source[id].registros ? source[id].registros : 0;
+      if (target) target.textContent = intFmt(value);
+    });
+  }
+
+  function updateModalEnvironmentFields() {
+    const environment = qs('f-entorno').value || PNCX.selectedEnvironment;
+    const className = ENVIRONMENTS[environment] ? ENVIRONMENTS[environment].className : '';
+
+    document.querySelectorAll('.env-field').forEach(field => {
+      const visible = className && field.classList.contains(className);
+      field.classList.toggle('is-hidden', !visible);
+      field.querySelectorAll('input,select,textarea').forEach(control => {
+        control.disabled = !visible || control.dataset.viewOnly === 'true';
+      });
+    });
+  }
+
+  /* ── APPS SCRIPT BRIDGE ──────────────────────────────── */
+  function runServer(key, ...args) {
+    return new Promise((resolve, reject) => {
+      const fnName = SERVER_MAP[key] || key;
+      if (!(window.google && google.script && google.script.run)) {
+        reject(new Error('google.script.run no disponible.')); return;
+      }
+      if (typeof google.script.run[fnName] !== 'function') {
+        reject(new Error('Funcion no encontrada en servidor: ' + fnName)); return;
+      }
+      google.script.run
+        .withSuccessHandler(result => {
+          console.log('[OK]', fnName, result);
+          if (result === null || result === undefined) {
+            reject(new Error('El servidor devolvio respuesta nula en ' + fnName + '.')); return;
+          }
+          resolve(result);
+        })
+        .withFailureHandler(err => {
+          console.error('[ERR]', fnName, err);
+          reject(new Error(err && err.message ? err.message : String(err)));
+        })[fnName](...args);
+    });
+  }
+
+  /* ── RENDER HELPERS ──────────────────────────────────── */
+  function renderEmpty(targetId, text) {
+    qs(targetId).innerHTML = '<div class="empty">' + esc(text) + '</div>';
+  }
+
+  function paintStats(stats) {
+    stats = stats || {};
+    qs('st-cargas').textContent         = intFmt(stats.totalCargas || 0);
+    qs('st-registros').textContent      = intFmt(stats.totalRegistros || 0);
+    qs('st-calibraciones').textContent  = intFmt(stats.totalCalibraciones || 0);
+    qs('st-verificaciones').textContent = intFmt(stats.totalVerificaciones || 0);
+    qs('st-huella').textContent         = money(stats.totalHuella || 0);
+    qs('st-poblacion').textContent      = intFmt(stats.totalClientesMes || stats.totalPoblacion || 0);
+    qs('st-duplicados').textContent     = intFmt(stats.totalDuplicados || 0);
+    qs('st-omitidos').textContent       = intFmt(stats.totalOmitidos || 0);
+  }
+
+  function chipEstado(v) {
+    const txt = String(v || '');
+    const cls = txt === 'OK' ? 'ok' : txt === 'SIN_DATOS' ? 'warn' : 'err';
+    return '<span class="chip ' + cls + '">' + esc(txt || 'N/D') + '</span>';
+  }
+  function nivelBadge(v) {
+    const txt = String(v || '').toUpperCase();
+    const cls = txt === 'WARNING' ? 'warn' : txt === 'ERROR' ? 'err' : 'ok';
+    return '<span class="chip ' + cls + '">' + esc(txt || 'INFO') + '</span>';
+  }
+
+  function renderSummary(rows) {
+    if (!rows || !rows.length) return renderEmpty('wrap-summary', 'No hay resumen mensual disponible.');
+    qs('wrap-summary').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Periodo</th><th>Categoria</th><th class="right">Registros</th><th class="right">Calibraciones</th>
+            <th class="right">Verificaciones</th><th class="right">Certificados</th><th class="right">Informes</th>
+            <th class="right">Estaciones</th><th class="right">Dispensadores</th><th class="right">Productos</th>
+            <th class="right">Unidades</th><th class="right">Poblacion</th><th class="right">Huella</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td>${esc(r.periodo)}</td><td>${esc(r.categoria)}</td>
+              <td class="right">${intFmt(r.registros)}</td><td class="right">${intFmt(r.calibraciones)}</td>
+              <td class="right">${intFmt(r.verificaciones)}</td><td class="right">${intFmt(r.certificados)}</td>
+              <td class="right">${intFmt(r.informes)}</td><td class="right">${intFmt(r.estaciones)}</td>
+              <td class="right">${intFmt(r.dispensadores)}</td><td class="right">${intFmt(r.productos)}</td>
+              <td class="right">${intFmt(r.unidades)}</td><td class="right">${intFmt(r.poblacion)}</td>
+              <td class="right">${money(r.huella)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderLoads(rows) {
+    if (!rows || !rows.length) return renderEmpty('wrap-loads', 'No hay cargas registradas todavia.');
+    qs('wrap-loads').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>ID Carga</th><th>Archivo</th><th>Tipo</th><th>Inicio</th><th>Fin</th>
+            <th class="right">Dur. ms</th><th class="right">Leidos</th><th class="right">Validos</th>
+            <th class="right">Insertados</th><th class="right">Duplicados</th><th class="right">Omitidos</th>
+            <th class="right">Errores</th><th class="right">Poblacion</th><th class="right">Huella</th>
+            <th>Estado</th><th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td class="mono">${esc(r.idCarga)}</td>
+              <td>${esc(r.archivo)}</td><td>${esc(r.tipo)}</td>
+              <td>${fmtDateTime(r.timestampInicio || r.fechaCarga)}</td><td>${fmtDateTime(r.timestampFin)}</td>
+              <td class="right">${intFmt(r.duracionMs)}</td><td class="right">${intFmt(r.leidos)}</td>
+              <td class="right">${intFmt(r.validos)}</td><td class="right">${intFmt(r.insertados)}</td>
+              <td class="right">${intFmt(r.duplicados)}</td><td class="right">${intFmt(r.omitidos)}</td>
+              <td class="right">${intFmt(r.errores)}</td><td class="right">${intFmt(r.poblacion)}</td>
+              <td class="right">${money(r.huella)}</td>
+              <td>${chipEstado(r.estado)}</td><td>${esc(r.usuario)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderDebug(rows) {
+    if (!rows || !rows.length) return renderEmpty('wrap-debug', 'No hay bitacora disponible.');
+    qs('wrap-debug').innerHTML = `
+      <table>
+        <thead><tr><th>Timestamp</th><th>Nivel</th><th>Etapa</th><th>ID Carga</th><th>Hoja</th><th>Fila</th><th>Mensaje</th></tr></thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td>${fmtDateTime(r.timestamp)}</td><td>${nivelBadge(r.nivel)}</td><td>${esc(r.etapa)}</td>
+              <td class="mono">${esc(r.idCarga)}</td><td>${esc(r.hoja)}</td><td>${esc(r.fila)}</td><td>${esc(r.mensaje)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderRecords(rows) {
+    if (!rows || !rows.length) {
+      return renderEmpty(
+        'wrap-records',
+        'No hay registros de ' + environmentLabel(PNCX.selectedEnvironment) + ' para los filtros actuales.'
+      );
+    }
+
+    const actions = r => `
+      <div class="actions">
+        <button class="btn btn-light" onclick="PNCX_UI.viewRecord('${esc(r.idRegistro)}')">Ver</button>
+        <button class="btn btn-secondary" onclick="PNCX_UI.editRecord('${esc(r.idRegistro)}')">Editar</button>
+        <button class="btn btn-danger" onclick="PNCX_UI.deleteRecord('${esc(r.idRegistro)}')">Eliminar</button>
+      </div>`;
+
+    let header = '';
+    let body = '';
+
+    if (PNCX.selectedEnvironment === 'DISPENSADORES_GASOLINA') {
+      header = `
+        <th>Acciones</th><th>ID</th><th>Fecha</th><th>Unidad / actividad</th>
+        <th>Departamento</th><th>Municipio</th><th class="right">Verificaciones</th>
+        <th class="right">Estaciones</th><th class="right">Dispensadores</th>
+        <th>Combustibles</th><th class="right">Inmov.</th>
+        <th class="right">Clientes mes</th><th class="right">Huella</th><th>Origen</th>`;
+
+      body = rows.map(r => `
+        <tr>
+          <td>${actions(r)}</td>
+          <td class="mono">${esc(r.idRegistro)}</td>
+          <td>${fmtDate(r.fechaOperacion)}</td>
+          <td>${esc(r.subcategoria || r.categoria)}</td>
+          <td>${esc(r.departamentoOperativo)}</td>
+          <td>${esc(r.municipio)}</td>
+          <td class="right">${intFmt(r.verificaciones)}</td>
+          <td class="right">${intFmt(r.estaciones)}</td>
+          <td class="right">${intFmt(r.dispensadores)}</td>
+          <td>${esc((r.productosDetalle || []).join(', '))}</td>
+          <td class="right">${intFmt(r.inmovilizaciones)}</td>
+          <td class="right">${intFmt(r.clientesMes)}</td>
+          <td class="right">${money(r.huella)}</td>
+          <td><span class="chip">${esc(r.origen || 'EXCEL')}</span></td>
+        </tr>`).join('');
+    } else if (PNCX.selectedEnvironment === 'PRODUCTO_PREEMPACADO') {
+      header = `
+        <th>Acciones</th><th>ID</th><th>Fecha</th><th>Producto / actividad</th>
+        <th>Sector</th><th>Departamento</th><th class="right">Productos</th>
+        <th class="right">Unidades / lotes</th><th class="right">Informes</th>
+        <th class="right">Población</th><th class="right">Huella</th><th>Origen</th>`;
+
+      body = rows.map(r => `
+        <tr>
+          <td>${actions(r)}</td>
+          <td class="mono">${esc(r.idRegistro)}</td>
+          <td>${fmtDate(r.fechaOperacion)}</td>
+          <td>${esc(r.subcategoria || r.categoria)}</td>
+          <td>${esc(r.sector)}</td>
+          <td>${esc(r.departamentoOperativo)}</td>
+          <td class="right">${intFmt(r.productos)}</td>
+          <td class="right">${intFmt(r.unidades)}</td>
+          <td class="right">${intFmt(r.informes)}</td>
+          <td class="right">${intFmt(r.poblacion)}</td>
+          <td class="right">${money(r.huella)}</td>
+          <td><span class="chip">${esc(r.origen || 'EXCEL')}</span></td>
+        </tr>`).join('');
+    } else {
+      header = `
+        <th>Acciones</th><th>ID</th><th>Fecha</th><th>Instrumento / magnitud</th>
+        <th>Sector</th><th>Departamento</th><th class="right">Calibraciones</th>
+        <th class="right">Certificados</th><th class="right">Informes</th>
+        <th class="right">Población</th><th class="right">Huella</th><th>Origen</th>`;
+
+      body = rows.map(r => `
+        <tr>
+          <td>${actions(r)}</td>
+          <td class="mono">${esc(r.idRegistro)}</td>
+          <td>${fmtDate(r.fechaOperacion)}</td>
+          <td>${esc(r.subcategoria || r.categoria)}</td>
+          <td>${esc(r.sector)}</td>
+          <td>${esc(r.departamentoOperativo)}</td>
+          <td class="right">${intFmt(r.calibraciones)}</td>
+          <td class="right">${intFmt(r.certificados)}</td>
+          <td class="right">${intFmt(r.informes)}</td>
+          <td class="right">${intFmt(r.poblacion)}</td>
+          <td class="right">${money(r.huella)}</td>
+          <td><span class="chip">${esc(r.origen || 'EXCEL')}</span></td>
+        </tr>`).join('');
+    }
+
+    qs('wrap-records').innerHTML = `
+      <table>
+        <thead><tr>${header}</tr></thead>
+        <tbody>${body}</tbody>
+      </table>`;
+  }
+
+  function renderLastLoad(load) {
+    if (!load) { qs('pncx-last-load').innerHTML = '<span class="chip">Sin cargas aun</span>'; return; }
+    qs('pncx-last-load').innerHTML = '<span class="chip ok">Ultima carga: ' + esc(load.archivo || 'N/D') + ' &middot; ' + fmtDateTime(load.timestampFin || load.fechaCarga) + '</span>';
+  }
+
+  function renderImportResult(result) {
+    if (!result || !result.totals) return;
+    const t = result.totals;
+    qs('wrap-import-result').innerHTML = `
+      <div class="banner" style="margin-bottom:14px;">${esc(result.message || 'Proceso finalizado.')}</div>
+      <div class="result-grid">
+        <div class="mini"><div class="k">Leidos</div>       <div class="v">${intFmt(t.leidos)}</div></div>
+        <div class="mini"><div class="k">Validos</div>      <div class="v">${intFmt(t.validos)}</div></div>
+        <div class="mini"><div class="k">Insertados</div>   <div class="v">${intFmt(t.insertados)}</div></div>
+        <div class="mini"><div class="k">Duplicados</div>   <div class="v">${intFmt(t.duplicados)}</div></div>
+        <div class="mini"><div class="k">Omitidos</div>     <div class="v">${intFmt(t.omitidos)}</div></div>
+        <div class="mini"><div class="k">Errores</div>      <div class="v">${intFmt(t.errores)}</div></div>
+        <div class="mini"><div class="k">Calibraciones</div><div class="v">${intFmt(t.calibraciones)}</div></div>
+        <div class="mini"><div class="k">Verificaciones</div><div class="v">${intFmt(t.verificaciones)}</div></div>
+        <div class="mini"><div class="k">Poblacion</div>    <div class="v">${intFmt(t.poblacion)}</div></div>
+        <div class="mini"><div class="k">Huella</div>       <div class="v">${money(t.huella)}</div></div>
+      </div>`;
+  }
+
+  function renderBoard(board) {
+    PNCX.board = board || { stats:{}, summary:[], loads:[], rows:[], debug:[], lastLoad:null };
+    paintStats(PNCX.board.stats || {});
+    paintEnvironmentStats(PNCX.board.environmentStats || {});
+    renderSummary(PNCX.board.summary || []);
+    renderLoads(PNCX.board.loads || []);
+    renderRecords(PNCX.board.rows || []);
+    renderDebug(PNCX.board.debug || []);
+    renderLastLoad(PNCX.board.lastLoad || null);
+    qs('pncx-banner').textContent = board && board.message ? board.message : 'Tablero cargado.';
+    if (PNCX.importResult) renderImportResult(PNCX.importResult);
+  }
+
+  /* ── ACCIONES PRINCIPALES ────────────────────────────── */
+  async function refreshBoard() {
+    const filters = {
+      year:     qs('filter-year').value     || '',
+      month:    qs('filter-month').value    || '',
+      environment: PNCX.selectedEnvironment,
+      text:        qs('filter-text').value || '',
+      limit:       5000
+    };
+    try {
+      setBusy(true, 'Cargando tablero', 'Consultando historial, resumen y registros...');
+      const diag = await runServer('diagnostico', PNCX.sessionToken);
+      console.log('Diagnostico CENAME:', diag);
+      const res = await runServer('estado', PNCX.sessionToken, filters);
+      if (!res || typeof res !== 'object') throw new Error('Respuesta del tablero invalida.');
+      if (!res.success) throw new Error(res.message || 'No fue posible consultar el tablero.');
+      renderBoard(res);
+    } catch (error) {
+      console.error('Error en refreshBoard:', error);
+      toast(error.message || 'No fue posible consultar el tablero.', 'err');
+      renderBoard({ success:false, message: error.message, stats:{}, summary:[], loads:[], rows:[], debug:[], lastLoad:null });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const txt = String(ev.target.result || '');
+        resolve(txt.includes(',') ? txt.split(',')[1] : txt);
+      };
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo seleccionado.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  let PNCX_UPLOAD_BUSY = false;
+
+  function isExcelFile_(file) {
+    const name = String(file && file.name || '').toLowerCase();
+    return name.endsWith('.xlsx') || name.endsWith('.xls');
+  }
+
+  async function processSelectedFile() {
+    if (PNCX_UPLOAD_BUSY) return;
+    const fileInput = qs('file-input');
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) { toast('Selecciona un archivo Excel antes de procesar.', 'warn'); return; }
+    if (!isExcelFile_(file)) { toast('Solo se permiten archivos .xlsx o .xls.', 'warn'); clearSelectedFile(); return; }
+    try {
+      PNCX_UPLOAD_BUSY = true;
+      setBusy(true, 'Procesando Excel', 'Extrayendo datos, deduplicando y guardando...');
+      const payload = {
+        department: qs('depto-input').value,
+        yearHint:   qs('year-input').value,
+        fileName:   file.name,
+        mimeType:   file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        base64Data: await fileToBase64(file)
+      };
+      const res = await runServer('importar', PNCX.sessionToken, payload);
+      if (!res || typeof res !== 'object') throw new Error('Respuesta de importacion invalida.');
+      if (!res.success) throw new Error(res.message || 'No fue posible procesar el archivo.');
+      PNCX.importResult = res;
+      renderImportResult(res);
+      toast(res.message || 'Archivo procesado correctamente.', 'ok');
+      await refreshBoard();
+      switchPane('pane-historial');
+    } catch (error) {
+      console.error('Error en processSelectedFile:', error);
+      toast(error.message || 'No fue posible procesar el archivo.', 'err');
+    } finally {
+      PNCX_UPLOAD_BUSY = false;
+      setBusy(false);
+    }
+  }
+
+  function clearSelectedFile() {
+    qs('file-input').value = '';
+    qs('file-name').value  = 'Ningun archivo seleccionado';
+  }
+
+  /* ── MODAL CRUD ──────────────────────────────────────── */
+  function openModal(mode, record) {
+    const viewOnly = mode === 'view';
+    const d = record || {};
+    const environment = d.entorno || PNCX.selectedEnvironment;
+
+    qs('modal-title').textContent =
+      mode === 'create' ? 'Nuevo registro' :
+      mode === 'edit' ? 'Editar registro' : 'Ver registro';
+    qs('modal-subtitle').textContent =
+      environmentLabel(environment) + (viewOnly ? ' · Solo lectura' : ' · Formulario de mantenimiento');
+
+    qs('f-idRegistro').value = d.idRegistro || '';
+    qs('f-fechaOperacion').value = d.fechaOperacion ? String(d.fechaOperacion).slice(0,10) : '';
+    qs('f-anio').value = d.anio || '';
+    qs('f-mes').value = d.mes || '';
+    qs('f-entorno').value = environment;
+    qs('f-subcategoria').value = d.subcategoria || '';
+    qs('f-sector').value = d.sector || '';
+    qs('f-departamentoOperativo').value = d.departamentoOperativo || 'CENAME';
+    qs('f-municipio').value = d.municipio || '';
+    qs('f-calibraciones').value = d.calibraciones || 0;
+    qs('f-certificados').value = d.certificados || 0;
+    qs('f-informes').value = d.informes || 0;
+    qs('f-estaciones').value = d.estaciones || 0;
+    qs('f-dispensadores').value = d.dispensadores || 0;
+    qs('f-productos').value = d.productos || 0;
+    qs('f-unidades').value = d.unidades || 0;
+    qs('f-verificaciones').value = d.verificaciones || 0;
+    qs('f-inmovilizaciones').value = d.inmovilizaciones || 0;
+    qs('f-clientesMes').value = d.clientesMes || 0;
+    qs('f-productosDetalle').value = Array.isArray(d.productosDetalle)
+      ? d.productosDetalle.join(', ')
+      : (d.productosDetalle || '');
+    qs('f-poblacion').value = d.poblacion || 0;
+    qs('f-huella').value = d.huella || 0;
+    qs('f-archivo').value = d.archivo || 'MANUAL';
+    qs('f-observaciones').value = d.observaciones || '';
+
+    [...qs('record-form').querySelectorAll('input,select,textarea')].forEach(el => {
+      if (el.id !== 'f-idRegistro') {
+        el.disabled = viewOnly;
+        el.dataset.viewOnly = viewOnly ? 'true' : 'false';
+      }
+    });
+
+    updateModalEnvironmentFields();
+
+    qs('save-record-btn').style.display = viewOnly ? 'none' : '';
+    qs('modal-delete-btn').style.display = mode === 'edit' ? '' : 'none';
+    qs('record-modal').classList.add('show');
+  }
+
+  function closeModal() { qs('record-modal').classList.remove('show'); }
+
+  function collectFormPayload() {
+    return {
+      idRegistro:qs('f-idRegistro').value || '',
+      fechaOperacion:qs('f-fechaOperacion').value || '',
+      anio:qs('f-anio').value || '',
+      mes:qs('f-mes').value || '',
+      entorno:qs('f-entorno').value || PNCX.selectedEnvironment,
+      subcategoria:qs('f-subcategoria').value || '',
+      sector:qs('f-sector').value || '',
+      departamentoOperativo:qs('f-departamentoOperativo').value || '',
+      municipio:qs('f-municipio').value || '',
+      calibraciones:qs('f-calibraciones').value || 0,
+      certificados:qs('f-certificados').value || 0,
+      informes:qs('f-informes').value || 0,
+      estaciones:qs('f-estaciones').value || 0,
+      dispensadores:qs('f-dispensadores').value || 0,
+      productos:qs('f-productos').value || 0,
+      productosDetalle:qs('f-productosDetalle').value || '',
+      unidades:qs('f-unidades').value || 0,
+      verificaciones:qs('f-verificaciones').value || 0,
+      inmovilizaciones:qs('f-inmovilizaciones').value || 0,
+      clientesMes:qs('f-clientesMes').value || 0,
+      poblacion:qs('f-poblacion').value || 0,
+      huella:qs('f-huella').value || 0,
+      archivo:qs('f-archivo').value || 'MANUAL',
+      observaciones:qs('f-observaciones').value || '',
+      origen:'MANUAL'
+    };
+  }
+
+  async function saveRecord() {
+    try {
+      setBusy(true, 'Guardando registro', 'Actualizando hoja y recalculando resumen...');
+      const res = await runServer('guardar', PNCX.sessionToken, collectFormPayload());
+      if (!res || !res.success) throw new Error(res && res.message ? res.message : 'No fue posible guardar el registro.');
+      toast(res.message || 'Registro guardado correctamente.', 'ok');
+      const savedEnvironment = qs('f-entorno').value;
+      closeModal();
+      if (ENVIRONMENTS[savedEnvironment]) {
+        PNCX.selectedEnvironment = savedEnvironment;
+        setSelectedEnvironment(savedEnvironment, false);
+      }
+      await refreshBoard();
+    } catch (error) {
+      toast(error.message || 'No fue posible guardar el registro.', 'err');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadRecord(idRegistro, mode) {
+    try {
+      setBusy(true, mode === 'view' ? 'Consultando registro' : 'Cargando registro', 'Recuperando datos actuales...');
+      const res = await runServer('obtener', PNCX.sessionToken, idRegistro);
+      if (!res || !res.success) throw new Error(res && res.message ? res.message : 'No fue posible obtener el registro.');
+      openModal(mode, res.record || {});
+    } catch (error) {
+      toast(error.message || 'No fue posible obtener el registro.', 'err');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeRecord(idRegistro) {
+    if (!confirm('Seguro que deseas eliminar este registro? Esta accion reconstruira el resumen mensual.')) return;
+    try {
+      setBusy(true, 'Eliminando registro', 'Actualizando hoja y recalculando resumen...');
+      const res = await runServer('eliminar', PNCX.sessionToken, idRegistro);
+      if (!res || !res.success) throw new Error(res && res.message ? res.message : 'No fue posible eliminar el registro.');
+      toast(res.message || 'Registro eliminado correctamente.', 'ok');
+      closeModal();
+      await refreshBoard();
+    } catch (error) {
+      toast(error.message || 'No fue posible eliminar el registro.', 'err');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+  // Diagnóstico de solo lectura: nunca borra registros desde el panel.
+  async function depureExistingDuplicates() {
+    try {
+      setBusy(true,'Analizando duplicados','No se modificarán filas ni hojas.');
+      const res=await runServer('depurar',PNCX.sessionToken,false);
+      if(!res || !res.success) throw new Error(res && res.message ? res.message : 'Diagnóstico no disponible.');
+      alert('Diagnóstico CENAME (solo lectura)\n\n'+
+        'Registros analizados: '+Number(res.totalAnalizados||0)+'\n'+
+        'Posibles duplicados por clave: '+Number(res.duplicadosDetectados||0)+'\n'+
+        'Fechas inválidas: '+Number(res.fechasInvalidas||0)+'\n\n'+
+        'No se eliminó ni modificó información. Revise los identificadores oficiales antes de decidir una limpieza.');
+    } catch(error){ toast(error.message||'Error al analizar duplicados.','err'); }
+    finally {setBusy(false);}
+  }
+
+  /* ── API UI PUBLICA ──────────────────────────────────── */
+  window.PNCX_UI = {
+    viewRecord:   id => loadRecord(id, 'view'),
+    editRecord:   id => loadRecord(id, 'edit'),
+    deleteRecord: id => removeRecord(id)
+  };
+
+  /* ── DROPZONE ────────────────────────────────────────── */
+  function bindDropzone() {
+    const dropzone  = qs('dropzone');
+    const fileInput = qs('file-input');
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+      e.preventDefault(); dropzone.classList.add('dragover');
+    }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+      e.preventDefault(); dropzone.classList.remove('dragover');
+    }));
+    dropzone.addEventListener('drop', e => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        qs('file-name').value = e.dataTransfer.files[0].name;
+        processSelectedFile();
+      }
+    });
+    fileInput.addEventListener('change', () => {
+      qs('file-name').value = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'Ningun archivo seleccionado';
+      if (fileInput.files && fileInput.files[0]) processSelectedFile();
+    });
+  }
+
+  /* ── INIT ────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!PNCX.sessionToken) {
+      toast('No hay sesión local. Inicie sesión nuevamente.', 'err');
+      setTimeout(pncxGoLogin, 1200);
+      return;
+    }
+
+    qs('pncx-user').textContent =
+      (PNCX.user && (PNCX.user.name || PNCX.user.username)) ||
+      (PNCX.user && PNCX.user.user) ||
+      'Usuario CENAME';
+
+    document.querySelectorAll('.tab').forEach(btn =>
+      btn.addEventListener('click', () => switchPane(btn.dataset.pane))
+    );
+    qs('pncx-refresh-btn')  .addEventListener('click', refreshBoard);
+    qs('apply-filter-btn')  .addEventListener('click', refreshBoard);
+    if (qs('upload-btn')) qs('upload-btn').addEventListener('click', processSelectedFile);
+    qs('clear-btn')         .addEventListener('click', clearSelectedFile);
+    qs('new-from-table-btn').addEventListener('click', () => openModal('create', {
+      entorno:PNCX.selectedEnvironment,
+      departamentoOperativo:'CENAME',
+      archivo:'MANUAL'
+    }));
+    qs('pncx-new-btn').addEventListener('click', () => openModal('create', {
+      entorno:PNCX.selectedEnvironment,
+      departamentoOperativo:'CENAME',
+      archivo:'MANUAL'
+    }));
+    qs('modal-close-btn')   .addEventListener('click', closeModal);
+    qs('modal-cancel-btn')  .addEventListener('click', closeModal);
+    qs('save-record-btn').addEventListener('click', saveRecord);
+    qs('f-entorno').addEventListener('change', updateModalEnvironmentFields);
+    qs('modal-delete-btn').addEventListener('click', () => {
+      const id = qs('f-idRegistro').value;
+      if (id) removeRecord(id);
+    });
+    qs('dedupe-btn').addEventListener('click', depureExistingDuplicates);
+
+    document.querySelectorAll('.environment-card').forEach(card => {
+      card.addEventListener('click', () => setSelectedEnvironment(card.dataset.environment, true));
+    });
+
+    qs('pncx-logout-btn') .addEventListener('click', () => qs('logout-modal').classList.add('show'));
+    qs('logout-cancel-btn').addEventListener('click', () => qs('logout-modal').classList.remove('show'));
+    qs('logout-confirm-btn').addEventListener('click', () => {
+      qs('logout-modal').classList.remove('show');
+      setBusy(true, 'Cerrando sesion', 'Redirigiendo...');
+      pncxGoLogin();
+    });
+
+    setSelectedEnvironment(PNCX.selectedEnvironment, false);
+    bindDropzone();
+
+    try {
+      setBusy(true, 'Inicializando modulo', 'Verificando hojas y preparando tablero...');
+      await runServer('init');
+    } catch (error) {
+      toast(error.message || 'No fue posible inicializar el modulo.', 'err');
+    } finally {
+      setBusy(false);
+    }
+
+    await refreshBoard();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# La identidad del proyecto Apps Script se configura únicamente en cada máquina.
+.clasp.json
+.claspignore
+.env
+.env.*
+*.log
+node_modules/
+.DS_Store
+Thumbs.db
+# Información institucional real / respaldos
+*.xlsx
+*.xls
+*.csv
+*.zip
+*.bak
+backups/
+qa-data/
