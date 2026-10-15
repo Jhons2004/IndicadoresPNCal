@@ -76,3 +76,13 @@ La hoja **`CENAME_RESUMEN_MENSUAL`** es una vista materializada que se reconstru
 **Rendimiento:** abrir CENAME ya no ejecuta la inicialización migratoria y reconstrucción global en cada ingreso, ni consulta el diagnóstico adicional en cada refresh. Las consultas leen los registros existentes. Las migraciones de datos deben ejecutarse explícitamente bajo control del administrador.
 
 **Comprobación sin modificaciones en producción:** comparación estática y pruebas de funciones puras contra la exportación del 15/10/2026: 476 registros reconocidos, 23 grupos mensuales, 1,315 calibraciones, 187 certificados, 190 estaciones y 1,711 dispensadores. Estas pruebas no verifican aún el despliegue `/exec`, permisos Workspace ni acceso a Sheets en vivo.
+
+## Iteración visual OGA y navegación adaptable (15/10/2026)
+
+- La opción **OGA** del panel administrativo carga exclusivamente el dashboard institucional OGA en un `iframe` adaptable; se eliminó la tabla redundante de organismos de esa vista.
+- URL de origen: `https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec`.
+- **Advertencia técnica:** si la aplicación OGA de origen envía restricciones de `X-Frame-Options` o CSP, el navegador impedirá el iframe. Eso no se puede resolver desde Indicadores PNCal: el administrador del despliegue de origen OGA debe autorizar su incrustación (por ejemplo, `HtmlService.XFrameOptionsMode.ALLOWALL` en el `doGet`, tras evaluar seguridad y autenticar el acceso). El botón **Abrir en otra pestaña** ofrece alternativa.
+- El menú lateral se ajusta en escritorio y se convierte en menú de hamburguesa con fondo superpuesto en pantallas medianas/pequeñas.
+- La esquina superior derecha abre un menú de usuario con **Cerrar sesión** que utiliza la función ya existente `cerrarSesionSeguro()`. El cierre de sesión lateral sigue disponible.
+- Esta iteración modifica **solo** `administrativo.html` y esta documentación: no cambia endpoints, hojas de cálculo, contraseñas, autorizaciones ni la lógica de indicadores.
+- Publicación: `git pull origin main`, verificar `.clasp.json` y `clasp.cmd push`; luego **Implementar > Administrar implementaciones > Editar > Nueva versión** para mantener la URL actual.

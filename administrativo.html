@@ -23,25 +23,25 @@
     body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
     button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
-    .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
-    .sidebar { background: #0f172a; color: white; padding: 22px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; }
+    .layout { display: grid; grid-template-columns: clamp(232px, 18vw, 300px) minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: #0f172a; color: white; padding: clamp(14px, 1.4vw, 22px); display: flex; flex-direction: column; gap: clamp(12px, 1.2vw, 20px); position: sticky; top: 0; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; z-index: 24; }
     .brand { display: flex; align-items: center; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
     .brand-logo { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, #5d5cde, #10b981); font-weight: 900; }
     .brand-title { font-weight: 900; line-height: 1.1; }
     .brand-subtitle { color: #94a3b8; font-size: 12px; margin-top: 3px; }
     .nav-group-title { color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin: 10px 0 6px; font-weight: 800; }
-    .nav-btn { width: 100%; border: 0; padding: 12px 13px; border-radius: 13px; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 800; transition: 0.18s ease; }
+    .nav-btn { width: 100%; min-height: 43px; font-size: clamp(13px, 0.95vw, 15px); border: 0; padding: 11px 12px; border-radius: 13px; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 800; transition: 0.18s ease; }
     .nav-btn:hover { background: rgba(255, 255, 255, 0.08); color: white; }
     .nav-btn.active { background: white; color: #0f172a; }
     .sidebar-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
     .main { min-width: 0; display: flex; flex-direction: column; }
     .topbar { background: rgba(255, 255, 255, 0.92); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 15; }
-    .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 28px; }
+    .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px clamp(15px, 2vw, 30px); min-width: 0; }
     .page-title { margin: 0; font-size: 24px; letter-spacing: -0.04em; }
     .page-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
     .session-card { text-align: right; font-size: 13px; color: var(--muted); }
     .session-card strong { display: block; color: var(--text); font-size: 14px; }
-    .content { padding: 28px; }
+    .content { width: 100%; min-width: 0; padding: clamp(14px, 2vw, 30px); }
     .section { display: none; }
     .section.active { display: block; }
     .grid { display: grid; gap: 18px; }
@@ -114,14 +114,27 @@
     body.is-loading .layout { pointer-events: none; user-select: none; }
     body.is-loading #appBlocker { pointer-events: auto; user-select: auto; }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
-      .sidebar { position: fixed; transform: translateX(-105%); transition: 0.22s ease; z-index: 100; width: 280px; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; transform: translateX(-110%); transition: transform 0.22s ease; z-index: 102; width: min(300px, 86vw); box-shadow: 15px 0 50px rgba(15,23,42,.22); }
       .sidebar.open { transform: translateX(0); }
-      .mobile-toggle { display: inline-flex; }
-      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-      .topbar-inner { padding: 16px; }
-      .content { padding: 16px; }
+      .mobile-toggle { display: inline-flex; flex: none; }
+      .sidebar-scrim.show { display: block; }
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .topbar-inner { padding: 12px 14px; gap: 10px; }
+      .topbar-page { gap: 9px; }
+      .page-subtitle { font-size: 12px; }
+      .content { padding: 12px; }
+      .grid-4,.grid-3,.grid-2 { grid-template-columns: 1fr; }
+      .session-trigger { padding: 8px; }
+      .session-trigger-name { max-width: 95px; }
+      .session-trigger-role { display: none !important; }
+      .oga-frame-wrap { min-height: 580px; height: calc(100dvh - 210px); }
+      .oga-embed-toolbar { padding: 12px; }
+      .oga-embed-toolbar .btn { flex: 1 1 auto; }
     }
     /* Tablas de consulta con lectura cómoda y cabeceras persistentes */
     .table-wrap { max-height:540px; border-top:1px solid var(--border); }
@@ -149,9 +162,52 @@
     .table-wrap td {font-size:12px;border-bottom:1px solid #e8edf5;vertical-align:middle}
     .nav-btn:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible {outline:3px solid #93c5fd;outline-offset:2px}
     @media(max-width:680px){.topbar-inner{align-items:flex-start}.grid.pn-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}.page-title{font-size:20px}.kpi-value{font-size:25px}}
+
+    /* OGA: dashboard institucional embebido, sin listado duplicado de OEC. */
+    .oga-embed { min-width: 0; width: 100%; overflow: hidden; }
+    .oga-embed-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .oga-embed-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .oga-frame-wrap { width:100%; height: clamp(620px, calc(100dvh - 205px), 1200px); background: #f8fafc; }
+    .oga-frame { display:block; width:100%; height:100%; border:0; background:white; }
+    .oga-embed-note { margin:0; padding: 10px 18px; background: #f8fafc; color: #64748b; font-size:12px; line-height:1.5; }
+    .oga-embed-note a { color:#315bdc; font-weight:700; }
+    /* Menú de sesión: accesible con ratón, teclado y dispositivos táctiles. */
+    .topbar-page { display:flex; align-items:center; gap:12px; min-width:0; }
+    .topbar-page > div { min-width:0; }
+    .session-menu-host { position:relative; z-index:18; flex:none; }
+    .session-trigger { display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:14px; background:#fff; color:var(--text); box-shadow:0 4px 18px rgba(15,23,42,.06); text-align:left; max-width:min(265px,35vw); }
+    .session-trigger:hover { border-color:#96aff1; background:#f8faff; }
+    .session-avatar { display:grid; place-items:center; flex:none; width:36px; height:36px; border-radius:12px; font-size:13px; font-weight:900; color:#fff; background:linear-gradient(135deg,#315bdc,#14b8a6); }
+    .session-trigger-text { min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .session-trigger-name { max-width:175px; display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:13px; font-weight:900; }
+    .session-trigger-role { color:var(--muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .session-caret { font-size:12px; color:#64748b; transition:transform .15s; }
+    .session-trigger[aria-expanded="true"] .session-caret { transform:rotate(180deg); }
+    .session-dropdown { position:absolute; top:calc(100% + 8px); right:0; width:min(270px,88vw); padding:8px; border:1px solid var(--border); border-radius:14px; background:#fff; box-shadow:0 20px 40px rgba(15,23,42,.18); }
+    .session-dropdown[hidden] { display:none !important; }
+    .session-dropdown-label { padding:10px 12px; font-size:12px; color:#64748b; overflow-wrap:anywhere; }
+    .session-logout { display:flex; width:100%; align-items:center; gap:10px; padding:12px; background:#fff5f5; color:#b91c1c; border:0; border-radius:10px; font-weight:800; text-align:left; }
+    .session-logout:hover { background:#fee2e2; }
+    .sidebar-scrim { display:none; position:fixed; inset:0; z-index:101; background:rgba(15,23,42,.56); }
+    @media (max-width:480px) {
+      .oga-embed-actions { flex-direction: column; align-items: stretch; }
+      .oga-embed-actions .btn { flex: none; width: 100%; }
+    }
+    @media (prefers-reduced-motion:reduce){.sidebar,.btn,.nav-btn,.session-caret{transition:none !important;}}
+    @media (max-width:680px) {
+      .oga-frame-wrap { min-height: 580px; height: calc(100dvh - 210px); }
+      .oga-embed-toolbar { padding: 12px; }
+      .oga-embed-actions { width: 100%; }
+      .oga-embed-actions .btn { flex: 1 1 145px; }
+      .page-title { font-size: clamp(16px, 4vw, 20px); }
+      .session-trigger { max-width: 142px; gap: 6px; }
+      .session-avatar { width: 30px; height: 30px; }
+      .session-trigger-name { max-width: 72px; }
+    }
   </style>
 </head>
 <body>
+  <div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div>
   <div class="layout">
     <aside id="sidebar" class="sidebar">
       <div class="brand"><div class="brand-logo">AD</div><div><div class="brand-title">Admin DSNC</div><div class="brand-subtitle">Indicadores PNCal</div></div></div>
@@ -175,7 +231,25 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="topbar-inner"><div style="display:flex;align-items:center;gap:12px"><button id="mobileBtn" class="btn mobile-toggle">☰</button><div><h1 id="pageTitle" class="page-title">Dashboard Administrativo</h1><p id="pageSubtitle" class="page-subtitle">Panel central para seguimiento de usuarios, indicadores y módulos.</p></div></div><div class="session-card"><strong id="sessionUser">Administrador</strong><span id="sessionRole">Validando sesión...</span></div></div></header>
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="topbar-page">
+            <button id="mobileBtn" type="button" class="btn mobile-toggle" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">☰</button>
+            <div><h1 id="pageTitle" class="page-title">Dashboard Administrativo</h1><p id="pageSubtitle" class="page-subtitle">Panel central para seguimiento de usuarios, indicadores y módulos.</p></div>
+          </div>
+          <div id="sessionMenuHost" class="session-menu-host">
+            <button id="sessionMenuButton" type="button" class="session-trigger" aria-label="Opciones del usuario" aria-haspopup="true" aria-expanded="false" aria-controls="sessionDropdown">
+              <span id="sessionAvatar" class="session-avatar" aria-hidden="true">AD</span>
+              <span class="session-trigger-text"><strong id="sessionUser" class="session-trigger-name">Administrador</strong><span id="sessionRole" class="session-trigger-role">Validando sesión...</span></span>
+              <span class="session-caret" aria-hidden="true">▾</span>
+            </button>
+            <div id="sessionDropdown" class="session-dropdown" role="menu" hidden>
+              <div class="session-dropdown-label">Sesión institucional</div>
+              <button type="button" class="session-logout" role="menuitem" onclick="cerrarSesionSeguro()">🚪 Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </header>
       <div class="content">
         <section id="section-dashboard" class="section active">
           <div class="grid grid-4">
@@ -192,7 +266,21 @@
 
         <section id="section-indicadores" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores globales</h2><button class="btn primary" onclick="cargarIndicadores()">🔄 Cargar indicadores</button></div><div class="card-body"><div id="indicatorSummary" class="grid grid-3"></div><div id="indicadoresGraficas" class="pn-chart"></div></div><div class="pn-info" id="indicatorRowsInfo">Seleccione «Cargar indicadores» para consultar datos.</div><div class="table-wrap"><table><thead id="indicatorHead"></thead><tbody id="indicatorBody"><tr><td class="empty">Presione cargar indicadores.</td></tr></tbody></table></div></div></section>
 
-        <section id="section-oga" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Panel OGA</h2><div class="toolbar"><button class="btn" onclick="abrirDashboardOGA()">📊 Ver dashboard de decisiones</button><button class="btn primary" onclick="cargarOGA()">🔄 Actualizar OGA</button></div></div><div class="card-body"><div id="ogaKpis" class="grid grid-4"></div></div><div class="table-wrap"><table><thead><tr><th>Registro</th><th>Razón social</th><th>Tipo</th><th>Norma</th><th>Segmento</th><th>Estado</th></tr></thead><tbody id="ogaBody"><tr><td colspan="6" class="empty">Presione actualizar OGA.</td></tr></tbody></table></div></div></section>
+        <section id="section-oga" class="section">
+          <div class="card oga-embed">
+            <div class="oga-embed-toolbar">
+              <h2 class="card-title">Dashboard institucional OGA</h2>
+              <div class="oga-embed-actions">
+                <button type="button" class="btn" onclick="recargarDashboardOGA()">↻ Recargar dashboard</button>
+                <a class="btn primary" href="https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec" target="_blank" rel="noopener noreferrer">↗ Abrir en otra pestaña</a>
+              </div>
+            </div>
+            <div class="oga-frame-wrap">
+              <iframe id="ogaDashboardFrame" class="oga-frame" title="Indicadores oficiales OGA" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+            <p class="oga-embed-note">Si Google impide visualizar el sitio integrado, utilice «Abrir en otra pestaña». El origen de OGA debe autorizar la visualización en iframe y el usuario necesita acceso a ese dashboard.</p>
+          </div>
+        </section>
 
         <section id="section-cename" class="section"><div class="card"><div class="card-head"><h2 class="card-title">CENAME · Indicadores mensuales</h2><div class="toolbar"><input type="number" id="cenameYear" class="input" style="width:100px" min="2000" max="2100" placeholder="Año"><select id="cenameMonth" class="select" style="width:145px"><option value="">Todos los meses</option></select><button class="btn primary" onclick="cargarCENAME()">Actualizar</button></div></div><div class="card-body"><div id="cenameKpis" class="grid grid-4"></div><div id="cenameMensual" class="pn-chart"></div><div id="cenameLaboratorios" class="pn-chart"></div><div id="cenameSectores" class="pn-chart"></div></div><div class="pn-info" id="cenameRowsInfo">Seleccione filtros y actualice para consultar CENAME.</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Categoría</th><th>Laboratorio / tipo</th><th>Calibraciones</th><th>Certificados</th><th>Estaciones</th><th>Dispensadores</th><th>Huella (Q)</th></tr></thead><tbody id="cenameBody"><tr><td colspan="9" class="empty">Presione cargar CENAME.</td></tr></tbody></table></div></div></section>
 
@@ -208,7 +296,6 @@
     </main>
   </div>
 
-  <div id="ogaReportModal" class="modal" role="dialog" aria-label="Dashboard OGA"><div class="modal-card" style="width:min(1200px,96vw)"><div class="modal-head"><h2 class="card-title">Dashboard de indicadores OGA</h2><div class="toolbar"><a class="btn" href="https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec" target="_blank" rel="noopener noreferrer">Abrir en otra pestaña</a><button class="btn" onclick="cerrarDashboardOGA()">✕ Cerrar</button></div></div><div class="card-body"><p style="font-size:12px;color:#64748b">Si Google impide mostrar el dashboard aquí por sus políticas de seguridad, utilice «Abrir en otra pestaña».</p><iframe id="ogaDashboardFrame" title="Indicadores OGA" style="width:100%;height:65vh;border:1px solid #e2e8f0;border-radius:12px" referrerpolicy="no-referrer"></iframe></div></div></div>
   <div id="userModal" class="modal"><form id="userForm" class="modal-card"><div class="modal-head"><h2 id="modalTitle" class="card-title">Nuevo usuario</h2><button type="button" class="btn" onclick="cerrarModalUsuario()">✕</button></div><div class="modal-body"><input type="hidden" id="originalUsername"><div class="grid grid-2"><div class="field"><label>Usuario</label><input id="username" class="input" required placeholder="usuario.dsnc"></div><div class="field"><label>Correo</label><input id="email" type="email" class="input" placeholder="correo@dominio.gt"></div><div class="field"><label>Contraseña</label><input id="password" class="input" type="password" autocomplete="new-password" placeholder="Obligatoria al crear"></div><div class="field"><label>Departamento</label><select id="department" class="select"><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Rol</label><select id="role" class="select"><option value="Administrador">Administrador</option><option value="Jefe">Jefe</option><option value="Usuario">Usuario</option></select></div><div class="field"><label>Estado</label><select id="status" class="select"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div></div><label style="display:flex;gap:8px;align-items:center;margin-top:18px;font-weight:900"><input type="checkbox" id="sendCredentials">Enviar credenciales por correo al guardar</label></div><div class="modal-foot"><button type="button" class="btn" onclick="cerrarModalUsuario()">Cancelar</button><button type="submit" class="btn primary" id="saveUserBtn">Guardar usuario</button></div></form></div>
 
   <div id="toast" class="toast"></div>
@@ -349,6 +436,8 @@
           ACTIVE_USER.role || 'Rol no recibido',
           ACTIVE_USER.department || 'Depto no recibido'
         ].join(' - ');
+        const initials = String(ACTIVE_USER.name || ACTIVE_USER.username || 'AD').trim().split(/\s+/).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase();
+        byId('sessionAvatar').textContent = initials || 'AD';
       }
 
       function irLogin() {
@@ -507,7 +596,7 @@
           dashboard: ['Dashboard Administrativo', 'Panel central para seguimiento de usuarios, indicadores y módulos.'],
           usuarios: ['CRUD de usuarios', 'Crear, editar, activar, desactivar, resetear contraseña y enviar credenciales.'],
           indicadores: ['Indicadores globales', 'Consulta consolidada de COGUANOR, CRETEC y CENAME.'],
-          oga: ['Panel OGA', 'Vista de organismos acreditados, reconocidos, sitios y decisiones.'],
+          oga: ['Indicadores OGA', 'Dashboard institucional de acreditación y decisiones.'],
           cename: ['Panel CENAME', 'Consulta de cargas, registros y resumen mensual.'],
           coguanor: ['Indicadores COGUANOR', 'Resultados de normalización, distribución y consultas.'],
           cretec: ['Indicadores CRETEC', 'Capacitaciones, eventos y personas atendidas.'],
@@ -517,7 +606,8 @@
         };
         byId('pageTitle').textContent = titles[section] ? titles[section][0] : 'Administrativo';
         byId('pageSubtitle').textContent = titles[section] ? titles[section][1] : '';
-        byId('sidebar').classList.remove('open');
+        cerrarMenuLateral();
+        cerrarMenuUsuario();
         if (section === 'usuarios') cargarUsuarios();
         if (section === 'indicadores') cargarIndicadores();
         if (section === 'logs') cargarLogs();
@@ -604,25 +694,19 @@
         byId('indicatorRowsInfo').textContent='Mostrando '+Math.min(rows.length,200)+' de '+rows.length+' filas consultadas. Los indicadores detallados de CENAME y OGA están en sus paneles.';
       }
 
-      async function cargarOGA() {
-        byId('ogaKpis').innerHTML = '';
-        byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">Cargando OGA...</td></tr>';
-        const dash = await api('OGA_GET_DASHBOARD', {}, { titulo:'Cargando OGA', mensaje:'Consultando organismos y tablero.' });
-        if (!dash.success) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">' + esc(dash.message || 'No se pudo cargar OGA.') + '</td></tr>'; return; }
-        const stats = dash.clientesResumen && dash.clientesResumen.stats ? dash.clientesResumen.stats : {};
-        const kpis = stats.kpisSegmentados || {};
-        const acreditados = kpis.Acreditados || {};
-        const reconocidos = kpis.Reconocidos || {};
-        byId('ogaKpis').innerHTML = '<div class="card kpi"><div class="kpi-label">Acreditados vigentes</div><div class="kpi-value">' + esc(acreditados.total || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Reconocidos vigentes</div><div class="kpi-value">' + esc(reconocidos.total || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Universo acreditados</div><div class="kpi-value">' + esc(acreditados.universo || 0) + '</div></div><div class="card kpi"><div class="kpi-label">Universo reconocidos</div><div class="kpi-value">' + esc(reconocidos.universo || 0) + '</div></div>';
-        const clients = await api('OGA_GET_CLIENTES', { limite:500 }, { titulo:'Cargando clientes OGA', mensaje:'Consultando directorio de organismos.' });
-        if (!clients.success) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">' + esc(clients.message || 'No se pudo cargar clientes OGA.') + '</td></tr>'; return; }
-        const list = clients.clientes || [];
-        if (!list.length) { byId('ogaBody').innerHTML = '<tr><td colspan="6" class="empty">Sin registros OGA.</td></tr>'; return; }
-        byId('ogaBody').innerHTML = list.map(function(item) { return '<tr><td>' + esc(item.oecId) + '</td><td>' + esc(item.razon) + '</td><td>' + esc(item.tipo) + '</td><td>' + esc(item.norma) + '</td><td>' + esc(item.segmento) + '</td><td>' + esc(item.estado) + '</td></tr>'; }).join('');
+      const OGA_DASHBOARD_URL = 'https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec';
+      function cargarOGA() {
+        const frame = byId('ogaDashboardFrame');
+        if (frame && !frame.getAttribute('src')) frame.setAttribute('src', OGA_DASHBOARD_URL);
       }
-
-      function abrirDashboardOGA(){byId('ogaReportModal').classList.add('show');byId('ogaDashboardFrame').src='https://script.google.com/a/macros/oga.org.gt/s/AKfycbyoFIvjS5NW6fDbDhnhZMdeIpnmEzVQsWxJfcD6A_pC-WuAG_MnNt6eGlZeZc-EphC8/exec';}
-      function cerrarDashboardOGA(){byId('ogaReportModal').classList.remove('show');byId('ogaDashboardFrame').removeAttribute('src');}
+      function recargarDashboardOGA() {
+        const frame = byId('ogaDashboardFrame');
+        if (!frame) return;
+        frame.removeAttribute('src');
+        frame.setAttribute('src', OGA_DASHBOARD_URL);
+      }
+      function abrirDashboardOGA() { abrirSeccion('oga'); }
+      function cerrarDashboardOGA() { /* Compatibilidad con llamadas antiguas: no se usa modal. */ }
       function pnNumero(v) { return Number(v || 0).toLocaleString('es-GT', {maximumFractionDigits:2}); }
       function pnKpi(nombre, cantidad) { return '<div class="card kpi"><div class="kpi-label">' + esc(nombre) + '</div><div class="kpi-value">' + esc(pnNumero(cantidad)) + '</div></div>'; }
       function pnBarras(target, title, entries) {
@@ -711,7 +795,54 @@
         irLogin();
       }
 
-      function setupEvents() { byId('cenameYear').value=new Date().getFullYear(); for(let i=1;i<=12;i++){const o=document.createElement('option');o.value=String(i);o.textContent=new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,i-1,1));byId('cenameMonth').appendChild(o);} byId('mobileBtn').addEventListener('click', function() { byId('sidebar').classList.toggle('open'); }); document.querySelectorAll('.nav-btn[data-section]').forEach(function(btn) { btn.addEventListener('click', function() { abrirSeccion(btn.dataset.section); }); }); byId('searchUsers').addEventListener('input', renderUsuarios); byId('filterDept').addEventListener('change', renderUsuarios); byId('userForm').addEventListener('submit', guardarUsuario); }
+      function cerrarMenuUsuario() {
+        byId('sessionMenuButton').setAttribute('aria-expanded', 'false');
+        byId('sessionDropdown').hidden = true;
+      }
+      function alternarMenuUsuario() {
+        const trigger = byId('sessionMenuButton');
+        const open = trigger.getAttribute('aria-expanded') !== 'true';
+        trigger.setAttribute('aria-expanded', String(open));
+        byId('sessionDropdown').hidden = !open;
+        if (open) byId('sessionDropdown').querySelector('[role="menuitem"]').focus();
+      }
+      function cerrarMenuLateral() {
+        byId('sidebar').classList.remove('open');
+        byId('sidebarScrim').classList.remove('show');
+        byId('mobileBtn').setAttribute('aria-expanded', 'false');
+        byId('mobileBtn').setAttribute('aria-label', 'Abrir menú');
+      }
+      function alternarMenuLateral() {
+        const isOpen = byId('sidebar').classList.toggle('open');
+        byId('sidebarScrim').classList.toggle('show', isOpen);
+        byId('mobileBtn').setAttribute('aria-expanded', String(isOpen));
+        byId('mobileBtn').setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+        cerrarMenuUsuario();
+      }
+      function setupEvents() {
+        byId('cenameYear').value = new Date().getFullYear();
+        for (let i=1;i<=12;i++) {
+          const o=document.createElement('option');o.value=String(i);
+          o.textContent=new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,i-1,1));
+          byId('cenameMonth').appendChild(o);
+        }
+        byId('mobileBtn').addEventListener('click', alternarMenuLateral);
+        byId('sidebarScrim').addEventListener('click', cerrarMenuLateral);
+        byId('sessionMenuButton').addEventListener('click', alternarMenuUsuario);
+        document.addEventListener('click', function(event) {
+          if (!byId('sessionMenuHost').contains(event.target)) cerrarMenuUsuario();
+        });
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape') { cerrarMenuUsuario(); cerrarMenuLateral(); }
+        });
+        window.addEventListener('resize', function() { if(window.innerWidth>1100) cerrarMenuLateral(); });
+        document.querySelectorAll('.nav-btn[data-section]').forEach(function(btn) {
+          btn.addEventListener('click', function() { abrirSeccion(btn.dataset.section); });
+        });
+        byId('searchUsers').addEventListener('input', renderUsuarios);
+        byId('filterDept').addEventListener('change', renderUsuarios);
+        byId('userForm').addEventListener('submit', guardarUsuario);
+      }
       async function init() { setupEvents(); const ok = await validarSesionInicial(); if (!ok) return; await cargarDashboard(); }
 
       window.abrirSeccion = abrirSeccion;
@@ -724,6 +855,7 @@
       window.cargarUsuarios = cargarUsuarios;
       window.cargarIndicadores = cargarIndicadores;
       window.cargarOGA = cargarOGA;
+      window.recargarDashboardOGA = recargarDashboardOGA;
       window.cargarCENAME = cargarCENAME;
       window.abrirDashboardOGA=abrirDashboardOGA;
       window.cerrarDashboardOGA=cerrarDashboardOGA;

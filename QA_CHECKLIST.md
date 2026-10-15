@@ -35,3 +35,11 @@
 - [ ] Las actualizaciones con el mismo `idReporte` no insertan una segunda operación.
 - [ ] Corregir un registro modifica el total del resumen del mes operativo correcto.
 - [ ] Verificar permisos de hojas, propiedades del script y aplicación web versionada antes de declarar producción estable.
+
+### Vista OGA embebida / navegación adaptable
+- [ ] OGA no muestra listado de organismos, solamente el dashboard externo embebido.
+- [ ] El enlace externo abre el dashboard si Google bloquea el iframe por política del origen.
+- [ ] En móvil (390 px) la navegación lateral se abre, se cierra y no genera desbordamiento horizontal.
+- [ ] En escritorio el menú del usuario despliega **Cerrar sesión** y el botón lateral sigue disponible.
+- [ ] Cerrar sesión desde cualquiera de los dos controles vuelve al login.
+- [ ] Los demás módulos (CENAME, COGUANOR, CRETEC, usuarios y correo) funcionan igual que antes.
