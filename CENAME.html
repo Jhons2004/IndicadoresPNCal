@@ -396,7 +396,7 @@
   <!-- ══════════ PANE: RESUMEN ══════════ -->
   <section id="pane-resumen" class="pane live">
     <div class="grid-stats">
-      <div class="card stat"><div class="label">Cargas registradas</div>    <div class="value" id="st-cargas">0</div></div>
+      <div class="card stat"><div class="label">Cargas relacionadas</div>    <div class="value" id="st-cargas">0</div></div>
       <div class="card stat"><div class="label">Registros normalizados</div><div class="value" id="st-registros">0</div></div>
       <div class="card stat"><div class="label">Calibraciones</div>         <div class="value" id="st-calibraciones">0</div></div>
       <div class="card stat"><div class="label">Verificaciones</div>        <div class="value" id="st-verificaciones">0</div></div>
@@ -404,6 +404,15 @@
       <div class="card stat"><div class="label">Poblacion</div>             <div class="value" id="st-poblacion">0</div></div>
       <div class="card stat"><div class="label">Duplicados</div>            <div class="value" id="st-duplicados">0</div></div>
       <div class="card stat"><div class="label">Omitidos</div>              <div class="value" id="st-omitidos">0</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head"><div><h2>Indicadores del entorno seleccionado</h2>
+      <p>Los totales se calculan desde CENAME_REGISTROS; no son conteos de intentos de carga.</p></div></div>
+      <div class="section-body">
+        <div class="grid-stats" id="pncx-environment-kpis" aria-live="polite"></div>
+        <div class="banner" style="margin-top:14px" id="pncx-metric-help"></div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:16px;">
@@ -420,7 +429,7 @@
       <div class="section-head">
         <div>
           <h2>Resumen mensual consolidado</h2>
-          <p>Metricas agrupadas por periodo y categoria.</p>
+          <p>Una fila = un mes y un entorno. Se suma la actividad de las filas de CENAME_REGISTROS según su Fecha Operación. Esta hoja es un consolidado calculado, no una nueva carga y no debe sumarse otra vez a los registros.</p>
         </div>
       </div>
       <div class="section-body table-wrap" id="wrap-summary"></div>
@@ -507,6 +516,11 @@
         <button class="btn btn-danger" id="dedupe-btn">Diagnosticar posibles duplicados</button>
       </div>
       <div class="section-body table-wrap" id="wrap-loads"></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="section-head"><div><h2>Intentos JSON no clasificados</h2>
+      <p>Solicitudes sin registro válido: no cuentan como datos operativos. Revise la causa y vuelva a enviar el reporte corregido.</p></div></div>
+      <div class="section-body table-wrap" id="wrap-unclassified"></div>
     </div>
     <div class="card" style="margin-top:16px;">
       <div class="section-head">
@@ -833,6 +847,40 @@
     qs(targetId).innerHTML = '<div class="empty">' + esc(text) + '</div>';
   }
 
+  function paintEnvironmentIndicators(stats) {
+    stats = stats || {};
+    var def = {
+      DISPENSADORES_GASOLINA: [
+        ['Estaciones visitadas registradas',stats.totalEstaciones],
+        ['Dispensadores registrados',stats.totalDispensadores],
+        ['Verificaciones registradas',stats.totalVerificaciones],
+        ['Huella económica',money(stats.totalHuella)]
+      ],
+      PRODUCTO_PREEMPACADO: [
+        ['Productos registrados',stats.totalProductos],
+        ['Unidades registradas',stats.totalUnidades],
+        ['Población reportada',stats.totalPoblacion],
+        ['Huella económica',money(stats.totalHuella)]
+      ],
+      INSTRUMENTOS_CALIBRADOS: [
+        ['Instrumentos calibrados',stats.totalCalibraciones],
+        ['Certificados extendidos',stats.totalCertificados],
+        ['Informes registrados',stats.totalInformes],
+        ['Registros operativos',stats.totalRegistros]
+      ]
+    };
+    var items = def[PNCX.selectedEnvironment] || [];
+    qs('pncx-environment-kpis').innerHTML = items.map(function(item){
+      return '<div class="card stat"><div class="label">'+esc(item[0])+'</div><div class="value">'+
+        (typeof item[1] === 'number' ? intFmt(item[1]) : esc(item[1] || '0'))+'</div></div>';
+    }).join('');
+    qs('pncx-metric-help').textContent =
+      'Historial de cargas = solicitudes procesadas (pueden ser rechazadas o actualizaciones). ' +
+      'Registros = filas vigentes en CENAME_REGISTROS. ' +
+      'El resumen mensual suma estas filas por mes de operación y entorno; no se duplica la información. ' +
+      'Intentos sin actividad se mantienen en la bitácora con su motivo y no crean indicadores.';
+  }
+
   function paintStats(stats) {
     stats = stats || {};
     qs('st-cargas').textContent         = intFmt(stats.totalCargas || 0);
@@ -891,9 +939,9 @@
           <tr>
             <th>ID Carga</th><th>Archivo</th><th>Tipo</th><th>Inicio</th><th>Fin</th>
             <th class="right">Dur. ms</th><th class="right">Leidos</th><th class="right">Validos</th>
-            <th class="right">Insertados</th><th class="right">Duplicados</th><th class="right">Omitidos</th>
+            <th class="right">Insertados</th><th class="right">Actualizados</th><th class="right">Ignorados</th><th class="right">Duplicados</th><th class="right">Omitidos</th>
             <th class="right">Errores</th><th class="right">Poblacion</th><th class="right">Huella</th>
-            <th>Estado</th><th>Usuario</th>
+            <th>Estado</th><th>Motivo / resultado</th><th>Usuario</th>
           </tr>
         </thead>
         <tbody>
@@ -907,10 +955,24 @@
               <td class="right">${intFmt(r.duplicados)}</td><td class="right">${intFmt(r.omitidos)}</td>
               <td class="right">${intFmt(r.errores)}</td><td class="right">${intFmt(r.poblacion)}</td>
               <td class="right">${money(r.huella)}</td>
-              <td>${chipEstado(r.estado)}</td><td>${esc(r.usuario)}</td>
+              <td>${chipEstado(r.estado)}</td><td title="${esc(r.detalle)}">${esc(r.detalle || 'Sin detalle')}</td><td>${esc(r.usuario)}</td>
             </tr>`).join('')}
         </tbody>
       </table>`;
+  }
+
+  function renderUnclassified(rows, count) {
+    rows = rows || [];
+    if (!rows.length) {
+      return renderEmpty('wrap-unclassified', 'No se encontraron intentos sin clasificación.');
+    }
+    qs('wrap-unclassified').innerHTML =
+      '<p class="muted" style="padding:0 0 12px">Total de intentos sin clasificar: ' + intFmt(count || 0) +
+      '. Se muestran los últimos ' + rows.length + ' (incluyen reintentos, no registros).</p>' +
+      '<table><thead><tr><th>ID carga</th><th>Fecha</th><th>Recibidos</th><th>Errores</th><th>Motivo</th></tr></thead><tbody>' +
+      rows.map(function(r){ return '<tr><td class="mono">'+esc(r.idCarga)+'</td><td>'+fmtDateTime(r.timestampInicio || r.fechaCarga)+
+        '</td><td class="right">'+intFmt(r.leidos)+'</td><td class="right">'+intFmt(r.errores)+'</td><td>'+esc(r.detalle || 'No se identificó un registro operativo válido.')+'</td></tr>'; }).join('') +
+      '</tbody></table>';
   }
 
   function renderDebug(rows) {
@@ -1051,9 +1113,11 @@
   function renderBoard(board) {
     PNCX.board = board || { stats:{}, summary:[], loads:[], rows:[], debug:[], lastLoad:null };
     paintStats(PNCX.board.stats || {});
+    paintEnvironmentIndicators(PNCX.board.stats || {});
     paintEnvironmentStats(PNCX.board.environmentStats || {});
     renderSummary(PNCX.board.summary || []);
     renderLoads(PNCX.board.loads || []);
+    renderUnclassified(PNCX.board.unclassifiedLoads || [], PNCX.board.unclassifiedCount || 0);
     renderRecords(PNCX.board.rows || []);
     renderDebug(PNCX.board.debug || []);
     renderLastLoad(PNCX.board.lastLoad || null);
@@ -1072,8 +1136,6 @@
     };
     try {
       setBusy(true, 'Cargando tablero', 'Consultando historial, resumen y registros...');
-      const diag = await runServer('diagnostico', PNCX.sessionToken);
-      console.log('Diagnostico CENAME:', diag);
       const res = await runServer('estado', PNCX.sessionToken, filters);
       if (!res || typeof res !== 'object') throw new Error('Respuesta del tablero invalida.');
       if (!res.success) throw new Error(res.message || 'No fue posible consultar el tablero.');
@@ -1379,15 +1441,8 @@
     setSelectedEnvironment(PNCX.selectedEnvironment, false);
     bindDropzone();
 
-    try {
-      setBusy(true, 'Inicializando modulo', 'Verificando hojas y preparando tablero...');
-      await runServer('init');
-    } catch (error) {
-      toast(error.message || 'No fue posible inicializar el modulo.', 'err');
-    } finally {
-      setBusy(false);
-    }
-
+    // No ejecutar migraciones ni reconstrucciones en cada entrada.
+    // estado() consulta los registros; el mantenimiento se ejecuta por separado.
     await refreshBoard();
   });
 </script>

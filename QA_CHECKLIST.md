@@ -21,3 +21,17 @@
 - Nombre oficial del laboratorio para códigos MA, TE, HRTE y demás subcategorías.
 - Definiciones inequívocas y campos origen: vehículos atendidos, mangueras inspeccionadas, empresas beneficiadas y gasolineras únicas.
 - Resolver discrepancias históricas de fechas CRETEC antes de ejecutar migración.
+
+### CENAME / OGA — verificación posterior al despliegue (15/10/2026)
+
+- [ ] Login con usuario OGA activo y rol `Usuario` redirige a `?page=OGA`; no muestra panel de administración.
+- [ ] `OGA_GET_DASHBOARD` y `OGA_GET_CLIENTES` cargan cifras con `google.script.run` y sesión válida.
+- [ ] Usuarios CENAME y CRETEC no pueden consultar los endpoints OGA.
+- [ ] Entrar a CENAME ya no ejecuta una migración de datos automáticamente.
+- [ ] Seleccionar cada entorno muestra los registros esperados (histórico de prueba: 232, 42 y 202).
+- [ ] Las tarjetas específicas de cada entorno y el resumen mensual concuerdan con `CENAME_REGISTROS`.
+- [ ] La pantalla «Intentos JSON no clasificados» indica motivos sin mostrar un registro operativo artificial.
+- [ ] Las cargas JSON nuevas informan `Detalle` con causa del primer error de normalización.
+- [ ] Las actualizaciones con el mismo `idReporte` no insertan una segunda operación.
+- [ ] Corregir un registro modifica el total del resumen del mes operativo correcto.
+- [ ] Verificar permisos de hojas, propiedades del script y aplicación web versionada antes de declarar producción estable.

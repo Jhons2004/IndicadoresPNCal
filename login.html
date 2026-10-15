@@ -244,7 +244,13 @@
           return false;
         }
 
-        const page = normalizePage(auth.targetPage || 'administrativo');
+        const user = auth.user || {};
+        const dept = String(user.department || '').trim().toUpperCase();
+        const role = String(user.role || '').trim().toLowerCase();
+        const isAdmin = ['administrador','admin','superadmin'].includes(role);
+        const page = !isAdmin && dept === 'OGA'
+          ? 'OGA'
+          : normalizePage(auth.targetPage || 'administrativo');
         window.top.location.href = getAppUrl() + '?page=' + encodeURIComponent(page);
         return true;
       } catch (e) {

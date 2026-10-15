@@ -62,3 +62,17 @@ clasp.cmd status
 ```
 
 Revisar manualmente creación, edición, login por rol, filtros de período, informes OGA, importación CENAME con mismo `idReporte`, logs y fechas CRETEC. Para producción, crear respaldo de Apps Script y Sheets y desplegar una nueva **versión** solo tras revisión institucional.
+
+## Revisión del 15/10/2026: OGA y clasificación CENAME
+
+**OGA:** los usuarios `Usuario` o `Jefe` del departamento OGA son dirigidos a `?page=OGA` (no al área administrativa). El módulo hace peticiones internas `google.script.run` con sesión verificada. El acceso a operaciones de OGA se comprueba en el backend; otras unidades no tienen ese permiso. Los administradores conservan acceso a su panel global.
+
+**CENAME:** el Excel de auditoría tiene 476 filas de `CENAME_REGISTROS`, repartidas en 232 dispensadores, 42 preempacados y 202 instrumentos calibrados. El total de 397 filas en `CENAME_CARGAS` representa intentos de carga (incluye errores, reintentos y actualizaciones), **no** 397 nuevas operaciones. En el historial se separan insertados, actualizados, ignorados, duplicados y errores. Los envíos `SIN_DATOS` sin tipo válido aparecen en el nuevo diagnóstico con motivo, sin atribuirlos a dispensadores.
+
+La hoja **`CENAME_RESUMEN_MENSUAL`** es una vista materializada que se reconstruye a partir de `CENAME_REGISTROS`. Cada fila se agrupa por **año + mes de fecha de operación + entorno** y contiene sumas como calibraciones, certificados y huella. No registra nuevas actividades, no debe sumarse por separado a los originales y nunca es fuente para crear más filas en `CENAME_REGISTROS`.
+
+**Actividad vacía:** los envíos JSON sin un `idReporte` válido o sin actividad cuantificable no generan un registro ficticio. Las causas quedan en `CENAME_DEBUG` y, para cargas nuevas, también en `CENAME_CARGAS.Detalle`. Si existe una versión válida anterior del reporte, la lógica de upsert existente continúa preservando campos omitidos de actualizaciones parciales. Una transmisión con actividad cero no demuestra nuevas inspecciones.
+
+**Rendimiento:** abrir CENAME ya no ejecuta la inicialización migratoria y reconstrucción global en cada ingreso, ni consulta el diagnóstico adicional en cada refresh. Las consultas leen los registros existentes. Las migraciones de datos deben ejecutarse explícitamente bajo control del administrador.
+
+**Comprobación sin modificaciones en producción:** comparación estática y pruebas de funciones puras contra la exportación del 15/10/2026: 476 registros reconocidos, 23 grupos mensuales, 1,315 calibraciones, 187 certificados, 190 estaciones y 1,711 dispensadores. Estas pruebas no verifican aún el despliegue `/exec`, permisos Workspace ni acceso a Sheets en vivo.

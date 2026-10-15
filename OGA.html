@@ -679,63 +679,55 @@ function fmt(v) {
   return num(v).toLocaleString('es-GT');
 }
 
+function ogaReadAuth_() {
+  try {
+    var raw = sessionStorage.getItem('dsnc_auth') || localStorage.getItem('dsnc_auth') || '';
+    var auth = JSON.parse(raw);
+    if (auth && auth.username && auth.password) return auth;
+  } catch(e) {}
+  return null;
+}
+function ogaGoLogin_() {
+  var href = OGA.appUrl ? OGA.appUrl + '?page=login' : '?page=login';
+  try { window.top.location.href = href; } catch(e) { window.location.href = href; }
+}
 function callAPI(action, extra, timeoutMs) {
   extra = extra || {};
   timeoutMs = timeoutMs || 45000;
-
-  return new Promise(function(resolve, reject) {
-    if (!OGA.appUrl) {
-      reject(new Error('URL del API no configurada'));
+  return new Promise(function(resolve,reject) {
+    var auth = ogaReadAuth_();
+    if (!auth) {
+      reject(new Error('No existe sesión activa. Regrese al inicio de sesión.'));
       return;
     }
-
-    var cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
-    var done = false;
-
+    if (!(window.google && google.script && google.script.run)) {
+      reject(new Error('El servicio de Google Apps Script no está disponible.'));
+      return;
+    }
+    var settled = false;
     var timer = setTimeout(function() {
-      if (done) return;
-      done = true;
-      delete window[cb];
-      reject(new Error('Timeout en la solicitud: ' + action));
+      if (settled) return;
+      settled = true;
+      reject(new Error('Tiempo de espera agotado al consultar: ' + action));
     }, timeoutMs);
-
-    window[cb] = function(res) {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      delete window[cb];
-
-      var old = document.getElementById(cb);
-      if (old) old.remove();
-
-      if (res) resolve(res);
-      else reject(new Error('Respuesta nula: ' + action));
-    };
-
-    var data = {
-      action: action,
-      callback: cb,
-      token: OGA.token
-    };
-
-    Object.keys(extra).forEach(function(k) {
-      data[k] = extra[k];
-    });
-
-    var params = new URLSearchParams(data);
-    var sc = document.createElement('script');
-    sc.id = cb;
-    sc.src = OGA.appUrl + '?' + params.toString();
-
-    sc.onerror = function() {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      delete window[cb];
-      reject(new Error('Error de red comunicando con OGA.'));
-    };
-
-    document.head.appendChild(sc);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (res && res.success === false && res.redirect) {
+          reject(new Error(res.message || 'Sesión caducada.'));
+          return;
+        }
+        resolve(res || {success:false,message:'Respuesta vacía del servidor.'});
+      })
+      .withFailureHandler(function(error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error(error && error.message ? error.message : String(error)));
+      })
+      .dsncApi(action, extra, {username:auth.username,password:auth.password});
   });
 }
 
@@ -896,16 +888,31 @@ function bindTabs() {
 
 document.addEventListener('DOMContentLoaded', function() {
   bindTabs();
-
-  qs('oga-username').textContent = OGA.user.name || 'Usuario OGA';
-  qs('oga-role').textContent = (OGA.user.role || '') + ' - ' + (OGA.user.department || 'OGA');
-
+  var auth = ogaReadAuth_();
+  if (!auth) {
+    toast('Sesión no encontrada. Inicie sesión nuevamente.', 'err');
+    setTimeout(ogaGoLogin_, 800);
+    return;
+  }
   if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Inter', Arial, sans-serif";
   }
-
-  if (OGA.appUrl) refreshAll();
-  else toast('Modo local: falta appUrl del backend.', 'err');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.success) {
+        toast((res && res.message) || 'No se pudo verificar la sesión OGA.', 'err');
+        return;
+      }
+      var user = res.user || {};
+      OGA.user = user;
+      qs('oga-username').textContent = user.name || user.username || 'Usuario OGA';
+      qs('oga-role').textContent = (user.role || '') + ' - ' + (user.department || 'OGA');
+      refreshAll();
+    })
+    .withFailureHandler(function(error) {
+      toast('No se pudo validar la sesión: ' + (error.message || error), 'err');
+    })
+    .dsncApi('AUTH_CHECK', {}, {username:auth.username,password:auth.password});
 });
 
 function refreshAll() {

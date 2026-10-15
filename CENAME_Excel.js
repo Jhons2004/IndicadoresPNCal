@@ -318,21 +318,26 @@ function pncxCenameEstado(sessionToken, filters) {
       return true;
     });
 
+    // Cada intento de carga NO es un registro normalizado. No vincular
+    // automáticamente las cargas sin clasificación a los tres entornos.
+    var relatedLoadIds = {};
+    filteredRecords.forEach(function(r) {
+      var id = String(pncxCenameGet_(r,'ID Carga') || '').trim();
+      if (id) relatedLoadIds[id] = true;
+    });
     var filteredLoads = loads.filter(function(r) {
       if (year) {
         var loadYear = String(pncxCenameGet_(r,'Año Referencia') || '').split('.')[0].trim();
         if (loadYear && loadYear !== year) return false;
       }
       if (environment) {
+        var idCarga = String(pncxCenameGet_(r,'ID Carga') || '').trim();
         var detected = String(pncxCenameGet_(r,'Entornos Detectados') || '');
-        if (detected) {
-          if (detected.indexOf(environment) < 0) return false;
-        } else {
-          var legacyType = pncxCenameCanonicalEnvironment_(
-            pncxCenameGet_(r,'Tipo Detectado') || ''
-          );
-          if (legacyType && legacyType !== environment) return false;
-        }
+        var typed = pncxCenameCanonicalEnvironment_(pncxCenameGet_(r,'Tipo Detectado'));
+        var hasEnvironment = detected.split(',').some(function(v) {
+          return pncxCenameCanonicalEnvironment_(v) === environment;
+        });
+        if (!hasEnvironment && typed !== environment && !relatedLoadIds[idCarga]) return false;
       }
       return true;
     });
@@ -427,6 +432,7 @@ function pncxCenameEstado(sessionToken, filters) {
         timestampFin: pncxCenameSerializableDate_(pncxCenameGet_(r,'Timestamp Fin'), true),
         archivo: String(pncxCenameGet_(r,'Archivo') || ''),
         tipo: String(pncxCenameGet_(r,'Tipo Detectado') || ''),
+        detalle: String(pncxCenameGet_(r,'Detalle') || ''),
         leidos: Number(pncxCenameGet_(r,'Registros Leidos') || 0),
         validos: Number(pncxCenameGet_(r,'Registros Validos') || 0),
         insertados: Number(pncxCenameGet_(r,'Registros Insertados') || 0),
@@ -457,8 +463,12 @@ function pncxCenameEstado(sessionToken, filters) {
 
     var stats = {
       totalCargas: filteredLoads.length,
+      totalCargasSinDatos:filteredLoads.filter(function(r){return String(pncxCenameGet_(r,'Estado')||'')==='SIN_DATOS';}).length,
       totalRegistros: filteredRecords.length,
       totalCalibraciones: sum('Calibraciones'),
+      totalProductos: sum('Productos'),
+      totalUnidades: sum('Unidades'),
+      totalInformes: sum('Informes'),
       totalCertificados: sum('Certificados'),
       totalEstaciones: sum('Estaciones'),
       totalDispensadores: sum('Dispensadores'),
@@ -494,6 +504,25 @@ function pncxCenameEstado(sessionToken, filters) {
       };
     });
 
+    var unclassified = loads.filter(function(r) {
+      var tipo = pncxCenameCanonicalEnvironment_(pncxCenameGet_(r,'Tipo Detectado'));
+      var entorno = String(pncxCenameGet_(r,'Entornos Detectados') || '').trim();
+      var estado = String(pncxCenameGet_(r,'Estado') || '').trim().toUpperCase();
+      return !tipo && !entorno && estado === 'SIN_DATOS';
+    }).sort(function(a,b) {
+      return pncxCenameDateMillis_(pncxCenameGet_(b,'Fecha Carga')) -
+             pncxCenameDateMillis_(pncxCenameGet_(a,'Fecha Carga'));
+    });
+    var unclassifiedUi = unclassified.slice(0,25).map(function(r) {
+      return {
+        idCarga:String(pncxCenameGet_(r,'ID Carga')||''),
+        timestampInicio:pncxCenameSerializableDate_(pncxCenameGet_(r,'Fecha Carga'),true),
+        leidos:Number(pncxCenameGet_(r,'Registros Leidos')||0),
+        errores:Number(pncxCenameGet_(r,'Registros con Error')||0),
+        detalle:String(pncxCenameGet_(r,'Detalle')||'')
+      };
+    });
+
     var debugUi = debugRows.slice(0, 200).map(function(r) {
       return {
         timestamp: pncxCenameSerializableDate_(pncxCenameGet_(r,'Timestamp'), true),
@@ -515,6 +544,8 @@ function pncxCenameEstado(sessionToken, filters) {
       stats: stats,
       summary: summaryUi,
       loads: loadsUi,
+      unclassifiedLoads:unclassifiedUi,
+      unclassifiedCount:unclassified.length,
       rows: rowsUi,
       debug: debugUi,
       lastLoad: loadsUi.length ? loadsUi[0] : null
@@ -674,7 +705,8 @@ function pncxCenameImportar(sessionToken, payload) {
       'Detalle':'Insertados: ' + uniqueRows.length +
         ' | Duplicados: ' + duplicateRows.length +
         ' | Omitidos: ' + totalOmitidos +
-        ' | Errores: ' + errorRows.length,
+        ' | Errores: ' + errorRows.length +
+        (errorRows.length ? ' | Motivo: ' + String(errorRows[0].message || '').slice(0,160) : ''),
       'Timestamp Inicio':start,
       'Timestamp Fin':end,
       'Duracion ms':duration,
@@ -1274,8 +1306,10 @@ function pncxCenameRebuildSummary_(ss) {
   var groups = {};
 
   records.forEach(function(r) {
-    var anio = Number(pncxCenameGet_(r,'Año') || 0);
-    var mes = Number(pncxCenameGet_(r,'Mes') || 0);
+    var periodo = pncxCenamePeriodFromRecord_(r);
+    var anio = periodo.anio;
+    var mes = periodo.mes;
+    if (!anio || mes < 1 || mes > 12) return;
     var env = pncxCenameGetEnvironmentFromObject_(r);
     var cat = pncxCenameEnvironmentLabel_(env);
     var key = [anio,mes,env].join('|');
@@ -2398,7 +2432,9 @@ function pncxCenameImportarJson_(payload) {
       'ID Carga':idCarga,
       'Fecha Carga':start,
       'Archivo':'JSON_ENDPOINT',
-      'Tipo Detectado':pncxCenameInferType_(affectedRows.length ? affectedRows : validRows),
+      'Tipo Detectado':(affectedRows.length || validRows.length)
+        ? pncxCenameInferType_(affectedRows.length ? affectedRows : validRows)
+        : 'No clasificado (sin registro válido)',
       'Registros Insertados':insertRows.length,
       'Registros Actualizados':updateRows.length,
       'Registros Ignorados':ignoredRows.length,
@@ -2608,8 +2644,9 @@ function pncxCenameExternalRead_(filters) {
 
   var rows = records.filter(function(obj) {
     if (environment && pncxCenameGetEnvironmentFromObject_(obj) !== environment) return false;
-    if (year && String(pncxCenameGet_(obj,'Año') || '') !== year) return false;
-    if (month && String(pncxCenameGet_(obj,'Mes') || '') !== month) return false;
+    var per=pncxCenamePeriodFromRecord_(obj);
+    if (year && String(per.anio) !== year) return false;
+    if (month && String(per.mes) !== month) return false;
     return true;
   }).slice(-limit).map(pncxCenameObjectToUi_);
 

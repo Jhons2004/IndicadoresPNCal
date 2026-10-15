@@ -45,7 +45,7 @@ function pncalSpreadsheetId_(kind) {
 
 const DEPARTMENT_CONFIG = {
   DSNC:     { page: 'administrativo', name: 'Dirección de Sistemas de Normalización y Certificación', color: '#5D5CDE' },
-  OGA:      { page: 'administrativo', name: 'Oficina Guatemalteca de Acreditación', color: '#EF4444' },
+  OGA:      { page: 'OGA', name: 'Oficina Guatemalteca de Acreditación', color: '#EF4444' },
   COGUANOR: { page: 'COGUANOR',       name: 'Comisión Guatemalteca de Normas', color: '#8B5CF6' },
   CENAME:   { page: 'CENAME',         name: 'Centro Nacional de Metrología', color: '#10B981' },
   CRETEC:   { page: 'CRETEC',         name: 'Comité Nacional de Reglamentación Técnica', color: '#F59E0B' }

@@ -79,6 +79,15 @@ var OGA_COORDS = {
 
 function handleOGAAction(action, params, session) {
   try {
+    // La página OGA NO es un panel administrativo. El usuario activo de OGA
+    // puede consultar sus indicadores; otros departamentos no tienen acceso.
+    if (!session || !session.valid || !session.user) {
+      return {success:false,message:'Sesión OGA inválida. Inicie sesión de nuevo.'};
+    }
+    var dept = normalizeDepartmentKey_(session.user.department);
+    if (!isAdministratorRole_(session.user.role) && dept !== 'OGA') {
+      return {success:false,message:'Este usuario no pertenece al departamento OGA.'};
+    }
     switch (action) {
       case 'OGA_GET_COMPILADO':
         return ogaGetCompilado(params, session);
