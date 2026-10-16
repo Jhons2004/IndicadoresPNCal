@@ -57,3 +57,12 @@
 - [ ] El correo NO se envía al pulsar «Solicitar actualización»; requiere revisar formulario, pulsar «Enviar» y confirmar.
 - [ ] Comprobar que el correo recibido contiene botón «Ingresar a Indicadores PNCal» y los enlaces del sistema, y que el inicio de sesión es accesible a rol Usuario.
 - [ ] Diseño responsive en escritorio, tableta y celular; filtros legibles sin desbordamiento horizontal.
+
+
+### Logout CENAME · 16/10/2026
+- [ ] Desde CENAME, abrir «Cerrar sesión» y comprobar la confirmación previa.
+- [ ] Al confirmar, el modal de progreso bloquea la interfaz y no permite enviar una segunda solicitud.
+- [ ] Tras un breve intervalo se redirige a login y las claves de sesión locales desaparecen.
+- [ ] Si el navegador bloquea el salto, aparece «Ir al inicio de sesión» después de unos segundos.
+- [ ] En móvil el modal permanece centrado, legible y sin scroll horizontal.
+- [ ] El resto de carga de archivos y edición mantiene el spinner genérico y su comportamiento actual.

@@ -61,6 +61,79 @@
     .logout-card p  { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
     .logout-actions { display: flex; gap: 10px; justify-content: center; }
 
+
+    /* Cierre de sesión: modal de progreso exclusivo, no cancelable y accesible. */
+    .logout-progress-overlay {
+      position: fixed; inset: 0; z-index: 2600;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; background: rgba(11, 29, 48, .64);
+      -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    }
+    .logout-progress-overlay[hidden], .logout-progress-continue[hidden] { display: none !important; }
+    .logout-progress-panel {
+      position: relative; isolation: isolate; overflow: hidden;
+      width: min(100%, 430px); padding: 34px 30px 30px;
+      background: #fff; border: 1px solid #dceaf2; border-radius: 26px;
+      box-shadow: 0 32px 90px rgba(7, 30, 48, .32);
+      text-align: center;
+    }
+    .logout-progress-panel::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 5px; background: linear-gradient(90deg, #0f766e, #14b8a6, #2563eb);
+    }
+    .logout-progress-spinner {
+      width: 76px; height: 76px; margin: 0 auto 22px;
+      display: grid; place-items: center; position: relative;
+    }
+    .logout-progress-spinner::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      border: 6px solid #e0eff6; border-top-color: #0d9488;
+      border-right-color: #2563eb; animation: pncalLogoutSpin 1.05s linear infinite;
+    }
+    .logout-progress-spinner svg { width: 30px; height: 30px; color: #0f766e; }
+    @keyframes pncalLogoutSpin { to { transform: rotate(360deg); } }
+    .logout-progress-eyebrow {
+      display: inline-block; margin-bottom: 11px; padding: 6px 11px;
+      background: #eafaf6; border: 1px solid #c4eee5; border-radius: 999px;
+      color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .logout-progress-panel h3 {
+      margin: 0 0 9px; color: #11233d; font-size: clamp(22px, 5vw, 26px);
+      line-height: 1.2; letter-spacing: -.025em;
+    }
+    .logout-progress-panel p {
+      max-width: 325px; margin: 0 auto 22px;
+      color: #52647b; font-size: 14px; line-height: 1.55;
+    }
+    .logout-progress-bar {
+      position: relative; height: 6px; overflow: hidden; margin: 0 auto 13px;
+      border-radius: 20px; background: #e4edf5;
+    }
+    .logout-progress-bar::before {
+      content: ''; position: absolute; top: 0; bottom: 0;
+      width: 40%; border-radius: inherit; background: linear-gradient(90deg, #0d9488, #2563eb);
+      animation: pncalLogoutProgress 1.45s ease-in-out infinite;
+    }
+    @keyframes pncalLogoutProgress { 0% { transform: translateX(-110%); } 100% { transform: translateX(355%); } }
+    .logout-progress-note { display: block; color: #667b90; font-size: 12px; line-height: 1.5; }
+    .logout-progress-continue {
+      margin: 18px auto 0; padding: 11px 16px; width: fit-content;
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      background: #0f766e; border-radius: 11px; font-weight: 800;
+      color: white; text-decoration: none; font-size: 14px;
+    }
+    .logout-progress-continue:hover { background: #115e59; }
+    .logout-progress-continue:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+    body.pncal-logging-out { overflow: hidden; }
+    @media (max-width: 480px) {
+      .logout-progress-overlay { padding: 16px; }
+      .logout-progress-panel { padding: 31px 22px 27px; border-radius: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .logout-progress-spinner::before, .logout-progress-bar::before { animation-duration: 3s; }
+    }
+
     /* ── NAV ── */
     .nav { margin: 18px 0 22px; display: flex; gap: 10px; flex-wrap: wrap; }
     .tab { border: 1px solid var(--line); background: #fff; color: #334155; padding: 12px 18px; border-radius: 999px; cursor: pointer; font-weight: 700; transition: .2s; }
@@ -577,6 +650,28 @@
   </div>
 </div>
 
+<!-- Modal bloqueante: protege la salida y no se cierra al tocar fuera. -->
+<div class="logout-progress-overlay" id="logout-progress-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="logout-progress-title" aria-describedby="logout-progress-description" tabindex="-1" hidden>
+  <div class="logout-progress-panel">
+    <div class="logout-progress-spinner" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="10" width="14" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+        <circle cx="12" cy="15.5" r="1" />
+      </svg>
+    </div>
+    <span class="logout-progress-eyebrow">CENAME · Sesión segura</span>
+    <h3 id="logout-progress-title">Cerrando sesión</h3>
+    <p id="logout-progress-description" aria-live="polite">Estamos finalizando tu sesión y preparando el inicio de sesión.</p>
+    <div class="logout-progress-bar" aria-hidden="true"></div>
+    <span class="logout-progress-note" id="logout-progress-note" role="status">Por favor, espera un momento…</span>
+    <a class="logout-progress-continue" id="logout-progress-continue" href="?page=login" target="_top" hidden>
+      Ir al inicio de sesión <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</div>
+
 <!-- ═══════════════════════ TOASTS ═══════════════════════ -->
 <div class="toast-wrap" id="toast-wrap"></div>
 
@@ -676,15 +771,66 @@
     }
   }
 
-  function pncxGoLogin() {
-    try {
-      sessionStorage.removeItem('dsnc_auth');
-      localStorage.removeItem('dsnc_auth');
-      sessionStorage.removeItem('dsnc_active');
-    } catch (e) {}
+  function pncxClearLocalSession() {
+    // Mantener las preferencias visuales y el usuario recordado; borrar solo estado de acceso.
+    const keys = ['dsnc_auth', 'dsnc_active', 'dsnc_session', 'dsnc_user'];
+    keys.forEach(key => {
+      try { sessionStorage.removeItem(key); } catch (_) {}
+      try { localStorage.removeItem(key); } catch (_) {}
+    });
+    if (typeof PNCX !== 'undefined') PNCX.sessionToken = '';
+  }
 
-    const url = PNCX.appUrl ? PNCX.appUrl + '?page=login' : '?page=login';
-    window.location.href = url;
+  function pncxLoginUrl() {
+    const base = (typeof PNCX !== 'undefined' && PNCX.appUrl) || window.location.href;
+    try {
+      const url = new URL(base, window.location.href);
+      url.searchParams.set('page', 'login');
+      url.hash = '';
+      return url.toString();
+    } catch (_) {
+      return '?page=login';
+    }
+  }
+
+  function pncxGoLogin() {
+    pncxClearLocalSession();
+    window.location.replace(pncxLoginUrl());
+  }
+
+  let pncxLogoutStarted = false;
+  function pncxFinishLogout() {
+    if (pncxLogoutStarted) return; // Evitar varios cierres simultáneos.
+    pncxLogoutStarted = true;
+    qs('logout-modal').classList.remove('show');
+    const progress = qs('logout-progress-overlay');
+    const link = qs('logout-progress-continue');
+    link.href = pncxLoginUrl();
+    progress.hidden = false;
+    document.body.classList.add('pncal-logging-out');
+    // Impide interacción con el formulario y los controles mientras finaliza la salida.
+    document.querySelectorAll('.topbar, .shell, #logout-modal, #loading-overlay').forEach(el => { el.inert = true; });
+    try { progress.focus({ preventScroll: true }); } catch (_) { progress.focus(); }
+    pncxClearLocalSession();
+
+    // Garantizar que el usuario vea la confirmación visual antes de navegar.
+    window.setTimeout(() => {
+      qs('logout-progress-note').textContent = 'Redirigiendo al acceso institucional…';
+      try { window.top.location.assign(link.href); }
+      catch (_) {
+        try { window.location.replace(link.href); } catch (_) { /* enlace de respaldo */ }
+      }
+    }, 1050);
+
+    // Si el navegador bloquea el redireccionamiento desde el iframe, evitar una espera infinita.
+    window.setTimeout(() => {
+      if (!document.hidden) {
+        qs('logout-progress-description').textContent = 'Tu sesión local se cerró. Para continuar, abre el inicio de sesión.';
+        qs('logout-progress-note').textContent = 'El navegador no completó la redirección automáticamente.';
+        link.hidden = false;
+        link.focus();
+      }
+    }, 4200);
   }
 
   const PNCX = {
@@ -1432,11 +1578,7 @@
 
     qs('pncx-logout-btn') .addEventListener('click', () => qs('logout-modal').classList.add('show'));
     qs('logout-cancel-btn').addEventListener('click', () => qs('logout-modal').classList.remove('show'));
-    qs('logout-confirm-btn').addEventListener('click', () => {
-      qs('logout-modal').classList.remove('show');
-      setBusy(true, 'Cerrando sesion', 'Redirigiendo...');
-      pncxGoLogin();
-    });
+    qs('logout-confirm-btn').addEventListener('click', pncxFinishLogout);
 
     setSelectedEnvironment(PNCX.selectedEnvironment, false);
     bindDropzone();

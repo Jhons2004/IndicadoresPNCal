@@ -100,3 +100,8 @@ La hoja **`CENAME_RESUMEN_MENSUAL`** es una vista materializada que se reconstru
 **Despliegue:** tras revisar `git status`, `git pull origin main`, `clasp.cmd status` y `clasp.cmd push`, editar **la implementación actual** de Apps Script y elegir **Nueva versión**. `clasp push` por sí solo no cambia el despliegue `/exec` versionado.
 
 **Pendiente de QA conectado:** verificar destinatarios reales configurados, entrega de MailApp en dominio DSNC y accesos de cada rol desde el nuevo mensaje. Las pruebas locales no enviaron correos.
+
+
+## Cierre de sesión CENAME · 16/10/2026
+
+Se reemplazó la pantalla genérica «Cerrando sesión / Redirigiendo» por un modal de progreso exclusivo de CENAME con foco accesible, indicador de carga, bloqueo del contenido mientras se elimina la sesión local y salida automática al login. Si el navegador bloquea una navegación dentro de Google Apps Script, transcurridos unos segundos se muestra un enlace manual al login en el mismo modal. No se cambian datos ni endpoints del sistema.
