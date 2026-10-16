@@ -151,6 +151,16 @@
     @media(max-width:650px){.pn-bar-row{grid-template-columns:95px 1fr 52px;gap:6px;}.pn-chart{padding:12px;}}
     /* PNCal UI QA: sin frameworks adicionales para evitar conflictos con Apps Script. */
     .pn-quick-links {grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+
+    .pn-period-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#475569;}
+    .pn-unit-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .pn-unit-toolbar .input{width:100px;}.pn-unit-toolbar .select{width:155px;}
+    .pn-empty-period{display:grid;gap:12px;justify-items:center;text-align:center;padding:24px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;margin-top:16px;color:#475569;}
+    .pn-empty-period[hidden]{display:none;}
+    .pn-empty-period strong{font-size:16px;color:#172033;}
+    .pn-empty-period p{margin:0;line-height:1.55;max-width:640px;}
+    .pn-empty-period .btn{white-space:normal;}
+    @media(max-width:680px){.pn-unit-toolbar{width:100%;}.pn-unit-toolbar .pn-period-label{flex:1 1 116px;flex-wrap:wrap;}.pn-unit-toolbar .input,.pn-unit-toolbar .select{width:100%;}.pn-unit-toolbar>.btn{flex:1 1 160px;}}
     .pn-info {padding:11px 18px;background:#f1f5f9;color:#475569;font-size:12px;border-top:1px solid #dbe3ef}
     .pn-num {text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     .pn-tag {background:#e8efff;color:#2044a4;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}
@@ -284,8 +294,8 @@
 
         <section id="section-cename" class="section"><div class="card"><div class="card-head"><h2 class="card-title">CENAME · Indicadores mensuales</h2><div class="toolbar"><input type="number" id="cenameYear" class="input" style="width:100px" min="2000" max="2100" placeholder="Año"><select id="cenameMonth" class="select" style="width:145px"><option value="">Todos los meses</option></select><button class="btn primary" onclick="cargarCENAME()">Actualizar</button></div></div><div class="card-body"><div id="cenameKpis" class="grid grid-4"></div><div id="cenameMensual" class="pn-chart"></div><div id="cenameLaboratorios" class="pn-chart"></div><div id="cenameSectores" class="pn-chart"></div></div><div class="pn-info" id="cenameRowsInfo">Seleccione filtros y actualice para consultar CENAME.</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Categoría</th><th>Laboratorio / tipo</th><th>Calibraciones</th><th>Certificados</th><th>Estaciones</th><th>Dispensadores</th><th>Huella (Q)</th></tr></thead><tbody id="cenameBody"><tr><td colspan="9" class="empty">Presione cargar CENAME.</td></tr></tbody></table></div></div></section>
 
-        <section id="section-coguanor" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores COGUANOR</h2><button class="btn primary" onclick="cargarUnidad('COGUANOR')">Actualizar</button></div><div class="card-body"><div id="coguanorKpis" class="grid grid-3"></div><div id="coguanorChart" class="pn-chart"></div></div><div class="pn-info" id="coguanorRowsInfo"></div><div class="table-wrap"><table><thead id="coguanorHead"></thead><tbody id="coguanorBody"></tbody></table></div></div></section>
-        <section id="section-cretec" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores CRETEC</h2><button class="btn primary" onclick="cargarUnidad('CRETEC')">Actualizar</button></div><div class="card-body"><div id="cretecKpis" class="grid grid-3"></div><div id="cretecChart" class="pn-chart"></div></div><div class="pn-info" id="cretecRowsInfo"></div><div class="table-wrap"><table><thead id="cretecHead"></thead><tbody id="cretecBody"></tbody></table></div></div></section>
+        <section id="section-coguanor" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores COGUANOR</h2><div class="pn-unit-toolbar"><label class="pn-period-label" for="coguanorYear">Año <input type="number" id="coguanorYear" class="input" min="2000" max="2100" step="1" aria-label="Año de COGUANOR" placeholder="Todos"></label><label class="pn-period-label" for="coguanorMonth">Mes <select id="coguanorMonth" class="select" aria-label="Mes de COGUANOR"><option value="">Todos los meses</option></select></label><button class="btn primary" onclick="cargarUnidad('COGUANOR')">Actualizar</button><button class="btn" onclick="prepararSolicitudIndicadores('COGUANOR')" title="Preparar solicitud de actualización por correo">✉️ Solicitar actualización</button></div></div><div class="card-body"><div id="coguanorKpis" class="grid grid-3"></div><div id="coguanorChart" class="pn-chart"></div><div id="coguanorEmpty" class="pn-empty-period" hidden></div></div><div class="pn-info" id="coguanorRowsInfo">Seleccione el año y el mes para consultar.</div><div class="table-wrap"><table><thead id="coguanorHead"></thead><tbody id="coguanorBody"></tbody></table></div></div></section>
+        <section id="section-cretec" class="section"><div class="card"><div class="card-head"><h2 class="card-title">Indicadores CRETEC</h2><div class="pn-unit-toolbar"><label class="pn-period-label" for="cretecYear">Año <input type="number" id="cretecYear" class="input" min="2000" max="2100" step="1" aria-label="Año de CRETEC" placeholder="Todos"></label><label class="pn-period-label" for="cretecMonth">Mes <select id="cretecMonth" class="select" aria-label="Mes de CRETEC"><option value="">Todos los meses</option></select></label><button class="btn primary" onclick="cargarUnidad('CRETEC')">Actualizar</button><button class="btn" onclick="prepararSolicitudIndicadores('CRETEC')" title="Preparar solicitud de actualización por correo">✉️ Solicitar actualización</button></div></div><div class="card-body"><div id="cretecKpis" class="grid grid-3"></div><div id="cretecChart" class="pn-chart"></div><div id="cretecEmpty" class="pn-empty-period" hidden></div></div><div class="pn-info" id="cretecRowsInfo">Seleccione el año y el mes para consultar.</div><div class="table-wrap"><table><thead id="cretecHead"></thead><tbody id="cretecBody"></tbody></table></div></div></section>
 
         <section id="section-correos" class="section"><div class="grid grid-2"><div class="card"><div class="card-head"><h2 class="card-title">Configurar correos</h2></div><div class="card-body"><div class="grid"><div class="field"><label>Departamento</label><select id="mailDept" class="select" onchange="cargarCorreosDepto()"><option value="">Seleccione</option><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Correos separados por coma</label><textarea id="mailEmails" class="textarea"></textarea></div><button class="btn primary" onclick="guardarCorreosDepto()">💾 Guardar correos</button></div></div></div><div class="card"><div class="card-head"><h2 class="card-title">Enviar recordatorio</h2></div><div class="card-body"><div class="grid"><div class="field"><label>Departamento</label><select id="sendDept" class="select"><option value="DSNC">DSNC</option><option value="OGA">OGA</option><option value="COGUANOR">COGUANOR</option><option value="CENAME">CENAME</option><option value="CRETEC">CRETEC</option></select></div><div class="field"><label>Destinatarios</label><textarea id="sendEmails" class="textarea"></textarea></div><div class="field"><label>Asunto</label><input id="sendSubject" class="input" value="Recordatorio de carga de indicadores"></div><div class="field"><label>Mensaje</label><textarea id="sendMessage" class="textarea">Estimados usuarios, se les recuerda registrar o validar la información correspondiente en el Sistema DSNC.</textarea></div><button class="btn success" onclick="enviarRecordatorio()">✉️ Enviar</button></div></div></div></div></section>
 
@@ -312,6 +322,7 @@
       let logs = [];
       let ACTIVE_AUTH = null;
       let ACTIVE_USER = null;
+      let solicitudIndicadoresPendiente = false;
 
       function byId(id) { return document.getElementById(id); }
       function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
@@ -730,26 +741,88 @@
         const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
         return m?m[3]+'/'+m[2]+'/'+m[1] : raw;
       }
-      async function cargarUnidad(dept) {
-        const pref=dept.toLowerCase();
-        const body=byId(pref+'Body');body.innerHTML='<tr><td class="empty">Cargando registros...</td></tr>';
-        const r=await api('GET_INDICATOR_DATA',{department:dept,limit:1500},{titulo:'Consultando '+dept,mensaje:'Leyendo registros de '+dept});
-        if(!r.success){body.innerHTML='<tr><td class="empty">'+esc(r.message||'Error')+'</td></tr>';return;}
-        const d=r.data||r,rows=d.rows||[];
-        const cols=dept==='CRETEC'?['Fecha','Tipo de actividad','Tema / Área','Modalidad','Asistentes','Lugar','Mes','Usuario']:['Mes','Tipo de registro','Cantidad','Catálogo de norma','Código AMSE','Sector / fecha','Usuario'];
-        const mapping=dept==='CRETEC'?row=>[pnDate(row[2]),row[13]||'Conferencia',row[4],row[5],pnNumero(row[7]),row[8],row[1],row[12]]:row=>[row[1],row[2],pnNumero(row[3]),row[4],row[5],row[7],row[13]];
-        const types={};let sum=0;
-        rows.forEach(row=>{
-          const key=String(dept==='CRETEC'?(row[13]||'Sin tipo'):(row[2]||'Sin tipo'));
-          const count=Number(dept==='CRETEC'?row[7]:row[3])||0;
-          types[key]=(types[key]||0)+count;sum+=count;
-        });
-        byId(pref+'Kpis').innerHTML=pnKpi('Registros',d.totalRows||0)+pnKpi(dept==='CRETEC'?'Asistentes registrados':'Cantidad declarada',sum)+pnKpi('Tipos de actividades',Object.keys(types).length);
-        pnBarras(pref+'Chart',dept==='CRETEC'?'Participantes por tipo de actividad':'Cantidades por tipo de registro',Object.entries(types));
-        byId(pref+'Head').innerHTML='<tr>'+cols.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';
-        body.innerHTML=rows.length?rows.slice(0,200).map(row=>'<tr>'+mapping(row).map((v,i)=>'<td'+(i===4?' class="pn-num"':'')+'>'+esc(v??'')+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" class="empty">No hay registros para esta unidad.</td></tr>';
-        const info=byId(pref+'RowsInfo');if(info)info.textContent='Mostrando '+Math.min(rows.length,200)+' de '+Number(d.totalRows||0)+' registros. '+(dept==='CRETEC'?'La fecha de la actividad se visualiza sin conversión de zona horaria.':'Los campos dependen del tipo de registro.');
-      }
+
+// URL suministrada por la institución. Los usuarios de unidad deben
+// iniciar en ?page=login; ?page=administrativo exige rol administrador.
+const PNCAL_INSTITUTIONAL_URL = 'https://script.google.com/a/dsnc.gob.gt/macros/s/AKfycbxUQIpLAxNM8tk7TkqoJDPLQJIlCyvvUDlSF5Ed1fo-MPioimYr3Ws01RqXtJiDMiKI/exec';
+function pnMesNombre(value) {
+  if (!value) return 'todos los meses';
+  const num=Number(value);
+  return new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,num-1,1));
+}
+function pnPeriodoDescripcion(dept) {
+  const pref=dept.toLowerCase();
+  const year=byId(pref+'Year').value.trim();
+  const month=byId(pref+'Month').value;
+  return month ? (pnMesNombre(month)+' de '+(year||'todos los años')) : (year ? 'el año '+year : 'todo el período');
+}
+function pnValidarPeriodo(dept) {
+  const pref=dept.toLowerCase();
+  const year=byId(pref+'Year').value.trim();
+  const month=byId(pref+'Month').value;
+  if (year && (!/^\d{4}$/.test(year) || Number(year)<2000 || Number(year)>2100)) {
+    toast('Indique un año válido entre 2000 y 2100.', 'warning');return null;
+  }
+  return {department:dept,limit:1500,year,month};
+}
+async function cargarUnidad(dept) {
+  const pref=dept.toLowerCase();
+  const filters=pnValidarPeriodo(dept);
+  if (!filters) return;
+  const body=byId(pref+'Body');
+  const empty=byId(pref+'Empty');
+  empty.hidden=true;
+  body.innerHTML='<tr><td colspan="8" class="empty">Cargando indicadores del período...</td></tr>';
+  const r=await api('GET_INDICATOR_DATA',filters,{titulo:'Consultando '+dept,mensaje:'Leyendo registros de '+dept+' por período.'});
+  if(!r.success){
+    byId(pref+'Kpis').innerHTML='';byId(pref+'Chart').innerHTML='';
+    byId(pref+'RowsInfo').textContent='No fue posible consultar '+dept+'.';
+    body.innerHTML='<tr><td colspan="8" class="empty">'+esc(r.message||'No se pudieron consultar los datos.')+'</td></tr>';
+    return;
+  }
+  const d=r.data||r,rows=d.rows||[];
+  const cols=dept==='CRETEC'?['Fecha','Tipo de actividad','Tema / Área','Modalidad','Asistentes','Lugar','Mes','Usuario']:['Mes','Tipo de registro','Cantidad','Catálogo de norma','Código AMSE','Sector / fecha','Usuario'];
+  const mapping=dept==='CRETEC'?row=>[pnDate(row[2]),row[13]||'Conferencia',row[4],row[5],pnNumero(row[7]),row[8],row[1],row[12]]:row=>[row[1],row[2],pnNumero(row[3]),row[4],row[5],row[7],row[13]];
+  const types={};let sum=0;
+  rows.forEach(row=>{
+    const key=String(dept==='CRETEC'?(row[13]||'Sin tipo'):(row[2]||'Sin tipo'));
+    const count=Number(dept==='CRETEC'?row[7]:row[3])||0;
+    types[key]=(types[key]||0)+count;sum+=count;
+  });
+  const count=Number(d.totalRows||0);
+  byId(pref+'Kpis').innerHTML=pnKpi('Registros',count)+pnKpi(dept==='CRETEC'?'Asistentes registrados':'Cantidad declarada',sum)+pnKpi('Tipos de actividades',Object.keys(types).length);
+  pnBarras(pref+'Chart',dept==='CRETEC'?'Participantes por tipo de actividad':'Cantidades por tipo de registro',Object.entries(types));
+  byId(pref+'Head').innerHTML='<tr>'+cols.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr>';
+  body.innerHTML=rows.length?rows.slice(0,200).map(row=>'<tr>'+mapping(row).map((v,i)=>'<td'+((dept==='CRETEC'&&i===4||dept==='COGUANOR'&&i===2)?' class="pn-num"':'')+'>'+esc(v??'')+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" class="empty">Sin registros en '+esc(pnPeriodoDescripcion(dept))+'.</td></tr>';
+  const info=byId(pref+'RowsInfo');
+  info.textContent='Período: '+pnPeriodoDescripcion(dept)+' · Mostrando '+Math.min(rows.length,200)+' de '+count+' registros. '+(dept==='CRETEC'?'El mes corresponde al período declarado en la hoja, y el año a la fecha exacta.':'El mes corresponde al período declarado y el año a la fecha de registro.');
+  if (!count) {
+    empty.hidden=false;
+    empty.innerHTML='<strong>Sin información reportada en '+esc(pnPeriodoDescripcion(dept))+'.</strong><p>Esto no significa que no haya actividades: únicamente no se encontraron registros para los filtros seleccionados. Puede solicitar a '+esc(dept)+' que actualice sus indicadores.</p><button class="btn primary" onclick="prepararSolicitudIndicadores(\''+esc(dept)+'\')">✉️ Preparar solicitud por correo</button>';
+  }
+}
+
+async function prepararSolicitudIndicadores(dept) {
+  if (['COGUANOR','CRETEC'].indexOf(dept)<0) return;
+  const periodo=pnPeriodoDescripcion(dept);
+  abrirSeccion('correos');
+  byId('sendDept').value=dept;
+  byId('sendEmails').value='';
+  byId('sendSubject').value='Solicitud de actualización de indicadores '+dept+' - '+periodo;
+  byId('sendMessage').value='Estimado equipo de '+dept+':\n\n'+
+    'Solicitamos revisar y registrar los indicadores correspondientes a '+periodo+'. '+
+    'Al consultar el panel administrativo no se encontraron datos para el período seleccionado o se requiere confirmar la información disponible.\n\n'+
+    'Ingrese al sistema con su usuario institucional:\n'+PNCAL_INSTITUTIONAL_URL+'?page=login\n\n'+
+    'Referencia del panel administrativo (solo administradores):\n'+PNCAL_INSTITUTIONAL_URL+'?page=administrativo\n\n'+
+    'Gracias por mantener actualizada la información de Indicadores PNCal.';
+  const r=await api('GET_DEPARTMENT_EMAILS',{department:dept},{titulo:'Consultando destinatarios',mensaje:'Buscando correos configurados para '+dept+'.'});
+  if(r.success && Array.isArray(r.emails)){
+    byId('sendEmails').value=r.emails.join(', ');
+    if(!r.emails.length)toast('No hay correos configurados para '+dept+'. Escriba los destinatarios antes de enviar.','warning');
+  } else toast('No se pudieron consultar los destinatarios. Ingréselos manualmente.','warning');
+  byId('sendEmails').focus();
+}
+
       async function cargarCENAME() {
         const filters={limit:5000,year:byId('cenameYear').value,month:byId('cenameMonth').value,includeHistory:false};
         byId('cenameBody').innerHTML='<tr><td colspan="9" class="empty">Cargando indicadores...</td></tr>';
@@ -784,7 +857,16 @@
 
       async function cargarCorreosDepto() { const department = byId('mailDept').value; if (!department) return; const result = await api('GET_DEPARTMENT_EMAILS', { department:department }, { titulo:'Cargando correos', mensaje:'Consultando destinatarios.' }); if (result.success) byId('mailEmails').value = (result.emails || []).join(', '); }
       async function guardarCorreosDepto() { const department = byId('mailDept').value; const emails = byId('mailEmails').value; if (!department) { toast('Seleccione un departamento.', 'warning'); return; } const result = await api('SAVE_DEPARTMENT_EMAILS', { department:department, emails:emails }, { titulo:'Guardando correos', mensaje:'Actualizando configuración.' }); if (result.success) toast('Correos guardados correctamente.', 'success'); }
-      async function enviarRecordatorio() { const payload = { department:byId('sendDept').value, emails:byId('sendEmails').value, subject:byId('sendSubject').value, message:byId('sendMessage').value, type:'monthly' }; if (!payload.emails || !payload.subject || !payload.message) { toast('Complete destinatarios, asunto y mensaje.', 'warning'); return; } const result = await api('SEND_REMINDER_EMAIL', payload, { titulo:'Enviando recordatorio', mensaje:'Enviando correo institucional.' }); if (result.success) toast(result.message || 'Recordatorio enviado.', 'success'); }
+      async function enviarRecordatorio() {
+        const payload={department:byId('sendDept').value,emails:byId('sendEmails').value.trim(),subject:byId('sendSubject').value.trim(),message:byId('sendMessage').value.trim(),type:solicitudIndicadoresPendiente?'indicator_missing':'monthly'};
+        if(!payload.emails||!payload.subject||!payload.message){toast('Complete destinatarios, asunto y mensaje.','warning');return;}
+        const addresses=payload.emails.split(/[;,\n]+/).map(x=>x.trim()).filter(Boolean);
+        if(!addresses.length || addresses.some(x=>!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(x))){toast('Revise los correos de los destinatarios.','warning');return;}
+        payload.emails=addresses.join(',');
+        if(!confirm('¿Enviar el correo de '+payload.department+' a '+addresses.length+' destinatario(s)?\n\nAsunto: '+payload.subject))return;
+        const result=await api('SEND_REMINDER_EMAIL',payload,{titulo:'Enviando recordatorio',mensaje:'Enviando correo institucional.'});
+        if(result.success){solicitudIndicadoresPendiente=false;toast(result.message||'Recordatorio enviado.','success');}
+      }
       async function cargarLogs() { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">Cargando logs...</td></tr>'; const result = await api('GET_LOGS', {}, { titulo:'Cargando bitácora', mensaje:'Consultando últimas acciones.' }); if (!result.success) { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">' + esc(result.message || 'No se pudo cargar logs.') + '</td></tr>'; return; } logs = result.logs || []; if (!logs.length) { byId('logsBody').innerHTML = '<tr><td colspan="5" class="empty">No hay logs.</td></tr>'; return; } byId('logsBody').innerHTML = logs.map(function(log) { return '<tr><td>' + esc(log.timestamp) + '</td><td>' + esc(log.user) + '</td><td>' + esc(log.department) + '</td><td>' + esc(log.action) + '</td><td>' + esc(log.details) + '</td></tr>'; }).join(''); }
 
       async function cerrarSesionSeguro() {
@@ -821,11 +903,14 @@
       }
       function setupEvents() {
         byId('cenameYear').value = new Date().getFullYear();
-        for (let i=1;i<=12;i++) {
-          const o=document.createElement('option');o.value=String(i);
-          o.textContent=new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,i-1,1));
-          byId('cenameMonth').appendChild(o);
-        }
+        ['cename','coguanor','cretec'].forEach(function(pref) {
+          if (pref !== 'cename') byId(pref+'Year').value = new Date().getFullYear();
+          for (let i=1;i<=12;i++) {
+            const o=document.createElement('option');o.value=String(i);
+            o.textContent=new Intl.DateTimeFormat('es-GT',{month:'long'}).format(new Date(2024,i-1,1));
+            byId(pref+'Month').appendChild(o);
+          }
+        });
         byId('mobileBtn').addEventListener('click', alternarMenuLateral);
         byId('sidebarScrim').addEventListener('click', cerrarMenuLateral);
         byId('sessionMenuButton').addEventListener('click', alternarMenuUsuario);
@@ -860,6 +945,7 @@
       window.abrirDashboardOGA=abrirDashboardOGA;
       window.cerrarDashboardOGA=cerrarDashboardOGA;
       window.cargarUnidad=cargarUnidad;
+      window.prepararSolicitudIndicadores=prepararSolicitudIndicadores;
       window.cargarResumenVisual=cargarResumenVisual;
       window.cargarCorreosDepto = cargarCorreosDepto;
       window.guardarCorreosDepto = guardarCorreosDepto;

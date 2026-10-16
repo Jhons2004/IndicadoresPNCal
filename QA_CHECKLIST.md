@@ -43,3 +43,17 @@
 - [ ] En escritorio el menú del usuario despliega **Cerrar sesión** y el botón lateral sigue disponible.
 - [ ] Cerrar sesión desde cualquiera de los dos controles vuelve al login.
 - [ ] Los demás módulos (CENAME, COGUANOR, CRETEC, usuarios y correo) funcionan igual que antes.
+
+### Filtros por año/mes y correos (16/10/2026)
+- [ ] CRETEC: elegir 2026 / junio y comprobar asistentes y conferencias reales del período.
+- [ ] CRETEC: elegir 2026 / septiembre; la clasificación usa `Mes` declarado aunque alguna `Fecha Exacta` sea agosto.
+- [ ] COGUANOR: elegir 2026 / febrero; utilizar el mes declarado aunque la carga haya sido capturada meses después.
+- [ ] En cada unidad seleccionar año sin información: mostrar 0, gráfico vacío y botón para solicitar actualización, sin errores de servidor.
+- [ ] «Todos los meses» suma los registros del año; «Todos los años» funciona dejando en blanco el campo Año.
+- [ ] Cambiar período y presionar «Actualizar» cambia simultáneamente KPI, gráfica y tabla; solo muestra registros del período.
+- [ ] Confirmar que para muchos registros la cantidad total/agrupaciones incluyen también filas no listadas por límite visual.
+- [ ] Solicitar actualización en CRETEC: formulario de correos selecciona CRETEC, carga destinatarios institucionales y prepara texto con período y enlaces.
+- [ ] Solicitar actualización en COGUANOR: mismo comportamiento, sin mezclar destinatarios de CRETEC.
+- [ ] El correo NO se envía al pulsar «Solicitar actualización»; requiere revisar formulario, pulsar «Enviar» y confirmar.
+- [ ] Comprobar que el correo recibido contiene botón «Ingresar a Indicadores PNCal» y los enlaces del sistema, y que el inicio de sesión es accesible a rol Usuario.
+- [ ] Diseño responsive en escritorio, tableta y celular; filtros legibles sin desbordamiento horizontal.

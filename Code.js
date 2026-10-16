@@ -924,6 +924,41 @@ function deleteIndicatorRow(params, session) {
   }
 }
 
+
+/**
+ * Normaliza el mes de las hojas institucionales sin alterar el valor guardado.
+ * Mes es el período reportado; no se reemplaza por la fecha de carga.
+ */
+function pncalMonthNumber_(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  var raw = String(value).toLowerCase().trim();
+  raw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var numeric = Number(raw);
+  if (isFinite(numeric) && Math.floor(numeric) === numeric && numeric >= 1 && numeric <= 12) return numeric;
+  var names = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  if (raw === 'setiembre') return 9;
+  return names.indexOf(raw) + 1;
+}
+
+/** Fecha de referencia para agrupar por año, sin conversiones UTC de yyyy-MM-dd.
+ * CRETEC: fecha exacta (columna C). COGUANOR: timestamp de registro (columna A).
+ */
+function pncalYearFromDate_(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    if (isNaN(value.getTime())) return 0;
+    return Number(Utilities.formatDate(value, Session.getScriptTimeZone() || 'America/Guatemala', 'yyyy'));
+  }
+  if (typeof value === 'number' && value > 20000 && value < 90000) {
+    return new Date(Date.UTC(1899, 11, 30) + value * 86400000).getUTCFullYear();
+  }
+  var raw = String(value == null ? '' : value).trim();
+  var iso = raw.match(/^(\d{4})[-\/]\d{1,2}[-\/]\d{1,2}/);
+  if (iso) return Number(iso[1]);
+  var local = raw.match(/^\d{1,2}[-\/]\d{1,2}[-\/](\d{4})/);
+  if (local) return Number(local[1]);
+  return 0;
+}
+
 function readIndicatorSheet_(department, limit, filters) {
   var result = {
     department: normalizeDepartmentKey_(department),
@@ -963,7 +998,14 @@ function readIndicatorSheet_(department, limit, filters) {
 
     var rows = [];
     var rowIndexes = [];
-    var monthFilter = String(filters.month || filters.mes || '').trim();
+    var monthFilterRaw = String(filters.month || filters.mes || '').trim();
+    var monthFilter = monthFilterRaw ? pncalMonthNumber_(monthFilterRaw) : 0;
+    if (monthFilterRaw && !monthFilter) throw new Error('Mes de consulta inválido.');
+    var yearFilterRaw = String(filters.year || filters.anio || '').trim();
+    var yearFilter = yearFilterRaw ? Number(yearFilterRaw) : 0;
+    if (yearFilterRaw && (!isFinite(yearFilter) || yearFilter < 2000 || yearFilter > 2100 || Math.floor(yearFilter) !== yearFilter)) {
+      throw new Error('Año de consulta inválido.');
+    }
 
     for (var i = 1; i < values.length; i++) {
       var rawRow = values[i];
@@ -975,7 +1017,13 @@ function readIndicatorSheet_(department, limit, filters) {
 
       var row = serializeIndicatorRowForClient_(rawRow);
 
-      if (monthFilter && String(row[1] || '').trim() !== monthFilter) continue;
+      // La columna Mes es una declaración institucional, no necesariamente
+      // el mes de la carga ni de la fecha exacta de una actividad CRETEC.
+      var rowMonth = pncalMonthNumber_(rawRow[1]);
+      var referenceDate = department === 'CRETEC' ? (rawRow[2] || rawRow[0]) : rawRow[0];
+      var rowYear = pncalYearFromDate_(referenceDate);
+      if (monthFilter && rowMonth !== monthFilter) continue;
+      if (yearFilter && rowYear !== yearFilter) continue;
 
       if (department === 'COGUANOR') {
         var coguanorType = String(row[2] || '').trim();
@@ -993,6 +1041,18 @@ function readIndicatorSheet_(department, limit, filters) {
     }
 
     result.totalRows = rows.length;
+    // Los KPI y gráficas representan TODAS las filas del período, aunque
+    // la tabla visual se limite por rendimiento.
+    var totalsByType = {};
+    var totalQuantity = 0;
+    rows.forEach(function(row) {
+      var type = String(department === 'CRETEC' ? (row[13] || 'Sin tipo') : (row[2] || 'Sin tipo'));
+      if (type === '__proto__' || type === 'constructor' || type === 'prototype') type = 'Otro';
+      var n = Number(department === 'CRETEC' ? row[7] : row[3]) || 0;
+      totalQuantity += n;
+      totalsByType[type] = (totalsByType[type] || 0) + n;
+    });
+    result.metrics = { totalQuantity:totalQuantity, byType:totalsByType };
 
     // Se conservan los registros más recientes cuando existe un límite.
     if (limit && limit > 0 && rows.length > limit) {
@@ -1619,10 +1679,19 @@ function sendReminderEmail(params, session) {
     var message = String(params.message || '').trim();
     if (!emails || !message) throw new Error('Destinatarios y mensaje son obligatorios.');
 
+    var htmlBody = '<div style="font-family:Arial,sans-serif;white-space:pre-line;line-height:1.6">' + escapeHtml_(message) + '</div>';
+    if (String(params.type || '') === 'indicator_missing' &&
+        (params.department === 'COGUANOR' || params.department === 'CRETEC')) {
+      // El enlace de ingreso funciona para usuarios de unidad; el enlace
+      // ?page=administrativo se conserva en el mensaje solo como referencia.
+      var portalUrl = 'https://script.google.com/a/dsnc.gob.gt/macros/s/AKfycbxUQIpLAxNM8tk7TkqoJDPLQJIlCyvvUDlSF5Ed1fo-MPioimYr3Ws01RqXtJiDMiKI/exec?page=login';
+      htmlBody += '<p style="margin-top:20px"><a href="' + portalUrl + '" style="display:inline-block;padding:12px 20px;background:#315bdc;color:#fff;text-decoration:none;border-radius:10px;font-weight:bold">Ingresar a Indicadores PNCal</a></p>';
+    }
     MailApp.sendEmail({
       to: emails,
       subject: subject,
-      htmlBody: '<div style="font-family:Arial,sans-serif;white-space:pre-line">' + escapeHtml_(message) + '</div>'
+      body: message,
+      htmlBody: htmlBody
     });
 
     logActivity(session.user, 'SEND_REMINDER', emails);

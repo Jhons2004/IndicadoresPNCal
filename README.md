@@ -86,3 +86,17 @@ La hoja **`CENAME_RESUMEN_MENSUAL`** es una vista materializada que se reconstru
 - La esquina superior derecha abre un menú de usuario con **Cerrar sesión** que utiliza la función ya existente `cerrarSesionSeguro()`. El cierre de sesión lateral sigue disponible.
 - Esta iteración modifica **solo** `administrativo.html` y esta documentación: no cambia endpoints, hojas de cálculo, contraseñas, autorizaciones ni la lógica de indicadores.
 - Publicación: `git pull origin main`, verificar `.clasp.json` y `clasp.cmd push`; luego **Implementar > Administrar implementaciones > Editar > Nueva versión** para mantener la URL actual.
+
+## Iteración 16/10/2026 — Filtros mensuales CRETEC y COGUANOR
+
+- El panel administrativo presenta los mismos controles **Año / Mes / Actualizar** que CENAME para CRETEC y COGUANOR. El año inicial es el actual y el mes inicial es «Todos los meses».
+- La consulta `GET_INDICATOR_DATA` aplica los filtros en `readIndicatorSheet_` **antes** de devolver datos o calcular `totalRows`, por lo que tarjetas, gráficas y tabla reflejan el período elegido. Se normalizan meses numéricos y nombres en español (incluyendo «setiembre»).
+- La hoja `CRETEC` usa la **columna Mes** (B) para clasificar el mes declarado y la **Fecha Exacta** (C) para determinar el año. La hoja `COGUANOR` usa la **columna Mes** (B) y el año del **Timestamp** (A). No se reescriben ni corrigen fechas históricas.
+- `metrics` contiene las sumas y agrupaciones para **todas** las filas filtradas, aun si se limita la cantidad de filas enviadas a la tabla por rendimiento. Si no hay filas, se muestran cero y un estado vacío claro.
+- Los botones «Solicitar actualización» abren el módulo existente **Correos**, seleccionan la unidad, recuperan destinatarios configurados mediante `GET_DEPARTMENT_EMAILS` y preparan un mensaje con los enlaces institucionales. **No se envía ningún correo automáticamente**; el administrador puede revisar destinatarios y mensaje y debe confirmar el envío mediante `SEND_REMINDER_EMAIL`.
+- URL facilitada por DSNC para panel administrativo (requiere rol Administrador): `https://script.google.com/a/dsnc.gob.gt/macros/s/AKfycbxUQIpLAxNM8tk7TkqoJDPLQJIlCyvvUDlSF5Ed1fo-MPioimYr3Ws01RqXtJiDMiKI/exec?page=administrativo`. El correo también utiliza `?page=login` para que usuarios de CRETEC o COGUANOR puedan entrar con sus credenciales y ser dirigidos al módulo correspondiente.
+- El backend incluye un botón HTML para abrir el portal cuando el correo corresponde a una solicitud de indicadores. La operación exige permisos administrativos existentes; se usa el mismo módulo de correo institucional y no se modifican las hojas de datos.
+
+**Despliegue:** tras revisar `git status`, `git pull origin main`, `clasp.cmd status` y `clasp.cmd push`, editar **la implementación actual** de Apps Script y elegir **Nueva versión**. `clasp push` por sí solo no cambia el despliegue `/exec` versionado.
+
+**Pendiente de QA conectado:** verificar destinatarios reales configurados, entrega de MailApp en dominio DSNC y accesos de cada rol desde el nuevo mensaje. Las pruebas locales no enviaron correos.
